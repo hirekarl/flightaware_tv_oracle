@@ -1,5 +1,7 @@
 """FlightAware TV — AI Fleet Disruption Oracle API."""
 
+import asyncio
+import json
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -9,6 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
+from backend.agents.coordinator import CoordinatorAgent
 from backend.models.flight import FlightState
 from backend.simulation import generate_mock_fleet
 
@@ -21,6 +24,8 @@ _cors_origins = [
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Initialize shared resources for the application lifetime."""
+    app.state.coordinator = CoordinatorAgent()
     yield
 
 
@@ -50,14 +55,16 @@ async def get_fleet() -> list[FlightState]:
     return generate_mock_fleet()
 
 
-async def _sse_fleet_stream() -> AsyncGenerator[str, None]:
-    """Yield SSE-formatted fleet state payloads every 5 seconds."""
-    import asyncio
-    import json
-
+async def _sse_fleet_stream(
+    coordinator: CoordinatorAgent,
+) -> AsyncGenerator[str, None]:
     while True:
         fleet = generate_mock_fleet()
-        payload = json.dumps([f.model_dump() for f in fleet])
+        analyzed: list[FlightState] = []
+        for flight in fleet:
+            analysis = await coordinator.analyze(flight)
+            analyzed.append(flight.model_copy(update={"aiAnalysis": analysis}))
+        payload = json.dumps([f.model_dump() for f in analyzed])
         yield f"data: {payload}\n\n"
         await asyncio.sleep(5)
 
@@ -65,8 +72,9 @@ async def _sse_fleet_stream() -> AsyncGenerator[str, None]:
 @app.get("/api/fleet/stream")
 async def stream_fleet() -> StreamingResponse:
     """SSE endpoint — pushes live fleet state updates to connected clients."""
+    coordinator: CoordinatorAgent = app.state.coordinator
     return StreamingResponse(
-        _sse_fleet_stream(),
+        _sse_fleet_stream(coordinator),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
