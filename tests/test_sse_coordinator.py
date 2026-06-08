@@ -91,9 +91,9 @@ async def test_sse_generator_passes_typed_flight_state_to_coordinator(
     await _first_event(mock_coordinator)
     for call in mock_coordinator.analyze.call_args_list:  # type: ignore[attr-defined]
         arg = call.args[0] if call.args else call.kwargs.get("flight")
-        assert isinstance(
-            arg, FlightState
-        ), f"analyze() got {type(arg).__name__}, expected FlightState."
+        assert isinstance(arg, FlightState), (
+            f"analyze() got {type(arg).__name__}, expected FlightState."
+        )
 
 
 async def test_sse_generator_payload_validates_as_fleet_state_list(

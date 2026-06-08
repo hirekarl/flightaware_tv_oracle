@@ -68,9 +68,9 @@ async def test_analyze_all_values_are_non_empty_strings(
 ) -> None:
     for status in OperationalStatus:
         result = await agent.analyze(_make_flight(operationalStatus=status))
-        assert all(
-            isinstance(v, str) and v for v in result.values()
-        ), f"Expected non-empty strings for status {status}, got {result}"
+        assert all(isinstance(v, str) and v for v in result.values()), (
+            f"Expected non-empty strings for status {status}, got {result}"
+        )
 
 
 async def test_analyze_critical_go_around_mentions_destination(

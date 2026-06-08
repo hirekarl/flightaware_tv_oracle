@@ -124,9 +124,9 @@ async def test_sse_cycle_per_flight_forecast_title_is_from_mock_fleet(
     """forecast_title must be the original mock aiAnalysis, not coordinator output."""
     records = await _cycle_records(mock_coordinator, caplog)
     for entry in records[0].flights:  # type: ignore[attr-defined]
-        assert (
-            entry["forecast_title"] != _COORDINATOR_TITLE
-        ), "forecast_title must be the original simulation title, not the AI output."
+        assert entry["forecast_title"] != _COORDINATOR_TITLE, (
+            "forecast_title must be the original simulation title, not the AI output."
+        )
 
 
 async def test_sse_cycle_per_flight_actual_title_matches_coordinator_output(

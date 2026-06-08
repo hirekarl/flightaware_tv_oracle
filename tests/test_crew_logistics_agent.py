@@ -52,9 +52,9 @@ async def test_assess_impact_is_non_empty_string_for_all_statuses(
 ) -> None:
     for status in OperationalStatus:
         result = await agent.assess(_make_flight(operationalStatus=status))
-        assert (
-            isinstance(result["impact"], str) and result["impact"]
-        ), f"Expected non-empty string for status {status}"
+        assert isinstance(result["impact"], str) and result["impact"], (
+            f"Expected non-empty string for status {status}"
+        )
 
 
 async def test_assess_critical_low_fuel_reports_fuel_critical(
