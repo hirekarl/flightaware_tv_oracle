@@ -51,13 +51,14 @@ props — no `any`, no `unknown` without an explicit assertion.
 
 ## Agent Roles
 
-When implementing features, adopt the persona of the relevant agent:
+Invoke a skill to activate the relevant agent. The skill reads its knowledge base leaves
+before generating any code or docs.
 
-### Backend Core Agent — `backend/`
+### Backend Core Agent — `backend/` · `/backend <task>`
 FastAPI endpoints, Pydantic models, async event loops, SSE stream.
 Reject any raw `dict` where a typed Pydantic model should exist.
 
-### Frontend UX Agent — `frontend/`
+### Frontend UX Agent — `frontend/` · `/frontend <task>`
 React 19 components, SSE client hook, visual state (Normal / Warning / Critical).
 No third-party accessibility overlay widgets. TypeScript interfaces only — no `any`.
 
@@ -65,11 +66,11 @@ No third-party accessibility overlay widgets. TypeScript interfaces only — no 
 CI pipeline, uv environment caching, parallelized GitHub Actions jobs.
 Any build failure must break the pipeline before merge.
 
-### QA Agent — `frontend/playwright.config.ts`, `frontend/vitest.config.ts`, `tests/`
+### QA Agent — `frontend/playwright.config.ts`, `frontend/vitest.config.ts`, `tests/` · `/qa <task>`
 Unit, component, and e2e tests. Axe-core injection in Playwright workflows.
 Assert Lighthouse accessibility score ≥ 95. Structural HTML invalidity must fail the suite.
 
-### Archivist Agent — `README.md`, `TODO.md`, `ARCHITECTURE.md`, docstrings
+### Archivist Agent — `README.md`, `TODO.md`, `ARCHITECTURE.md`, docstrings · `/docs-sync <task>`
 Keep `TODO.md` synchronized with sprint state after every merge.
 Strip boilerplate from all output. Dense, actionable prose only.
 
@@ -96,11 +97,25 @@ Use it before writing implementation code for a new area.
 - **Update leaves** when you discover a real-world gotcha the file doesn't cover.
 
 ### Archivist responsibilities
-When the user drops a link:
-1. Fetch the URL.
-2. Identify the matching leaf in `MAP.md`.
-3. Synthesize key patterns and gotchas from the fetched content into the leaf body.
-4. Add the URL to the leaf's `## Resources` section with the fetch date.
+When the user drops a link, run `/kb-update <url>`. The skill handles fetch → leaf
+identification → synthesis → resource entry automatically.
+
+---
+
+## Skills
+
+Project-level slash commands in `.claude/commands/`. Invoke from any Claude Code session.
+
+| Skill | Purpose |
+|---|---|
+| `/validate` | Runs the full check suite — ruff, mypy, pytest, tsc, vitest — and reports pass/fail |
+| `/contract-check` | Diffs `FlightState` (Pydantic) against TypeScript interfaces; flags any drift |
+| `/sync-todo` | Rewrites `TODO.md` from `git log` + codebase state |
+| `/kb-update <url>` | Fetches a URL and synthesizes it into the matching knowledge base leaf |
+| `/backend <task>` | Activates Backend Core Agent; reads KB leaves before writing code |
+| `/frontend <task>` | Activates Frontend UX Agent; reads KB leaves before writing code |
+| `/qa <task>` | Activates QA Agent; reads KB leaves before writing tests |
+| `/docs-sync <task>` | Activates Archivist Agent for documentation and KB maintenance |
 
 ---
 

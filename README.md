@@ -21,6 +21,10 @@ flightaware_tv_oracle/
 
 ## Developer Setup
 
+> **First time on this machine?** See [`docs/contributor-setup.md`](docs/contributor-setup.md)
+> for full environment setup, Python installation via `uv`, GitHub CLI SSL troubleshooting,
+> and browser-based authentication.
+
 ### Prerequisites
 
 - **uv** — Python package manager
@@ -109,6 +113,21 @@ cd frontend && npm run test:e2e
 # Accessibility audit (Lighthouse CI)
 lhci autorun
 ```
+
+## Claude Code Skills
+
+Project-level slash commands available in any Claude Code session. Skills live in `.claude/commands/`.
+
+| Skill | Usage | What it does |
+|---|---|---|
+| `/validate` | `/validate` | Runs ruff → mypy → pytest → tsc → vitest; reports pass/fail per check |
+| `/contract-check` | `/contract-check` | Diffs `FlightState` Pydantic model against TypeScript interfaces; flags drift |
+| `/sync-todo` | `/sync-todo` | Rewrites `TODO.md` from `git log` + codebase structure |
+| `/kb-update` | `/kb-update <url>` | Fetches a URL and synthesizes it into the matching `.knowledge_base/` leaf |
+| `/backend` | `/backend <task>` | Backend Core Agent: reads KB leaves, then implements in `backend/` |
+| `/frontend` | `/frontend <task>` | Frontend UX Agent: reads KB leaves, then implements in `frontend/` |
+| `/qa` | `/qa <task>` | QA Agent: reads KB leaves, then writes tests |
+| `/docs-sync` | `/docs-sync <task>` | Archivist Agent: documentation and knowledge base maintenance |
 
 ## CI/CD Pipeline
 
