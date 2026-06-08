@@ -83,6 +83,31 @@ jobs:
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  notify-slack:
+    name: Slack — CI result
+    runs-on: ubuntu-latest
+    needs: [backend-validation, frontend-validation, accessibility-audit]
+    if: always()
+    steps:
+      - name: Post result
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": "${{ contains(needs.*.result, 'failure') && ':red_circle: CI failed' || ':large_green_circle: CI passed' }} on `${{ github.ref_name }}`",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "${{ contains(needs.*.result, 'failure') && ':red_circle: *CI failed*' || ':large_green_circle: *CI passed*' }} — *${{ github.repository }}*\n*Branch:* `${{ github.ref_name }}`  *Actor:* ${{ github.actor }}\n*Backend:* ${{ needs.backend-validation.result }}  *Frontend:* ${{ needs.frontend-validation.result }}  *A11y:* ${{ needs.accessibility-audit.result }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
+                  }
+                }
+              ]
+            }
+
   automated-release:
     name: Automated Release — semantic-release
     runs-on: ubuntu-latest
@@ -106,3 +131,23 @@ jobs:
         run: uv run semantic-release publish
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      - name: Notify Slack — release published
+        if: success()
+        uses: slackapi/slack-github-action@v2
+        with:
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook-type: incoming-webhook
+          payload: |
+            {
+              "text": ":rocket: New release published — ${{ github.repository }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": ":rocket: *Release published* — *${{ github.repository }}*\n<${{ github.server_url }}/${{ github.repository }}/releases|View releases>"
+                  }
+                }
+              ]
+            }
