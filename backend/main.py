@@ -1,5 +1,6 @@
 """FlightAware TV — AI Fleet Disruption Oracle API."""
 
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -10,6 +11,12 @@ from fastapi.responses import StreamingResponse
 
 from backend.models.flight import FlightState
 from backend.simulation import generate_mock_fleet
+
+_cors_origins = [
+    o.strip()
+    for o in os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",")
+    if o.strip()
+]
 
 
 @asynccontextmanager
@@ -25,7 +32,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=_cors_origins,
     allow_methods=["GET"],
     allow_headers=["*"],
 )
