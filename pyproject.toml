@@ -1,0 +1,77 @@
+[project]
+name = "flightaware-tv-backend"
+version = "0.1.0"
+description = "AI Fleet Disruption Oracle — FastAPI backend"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard]>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "instructor>=1.7.0",
+    "google-genai>=2.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.0.0",
+    "ruff>=0.8.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "python-semantic-release>=10.0.0",
+    "commitizen>=3.29.0",
+    "httpx>=0.27.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["backend"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "F401",  # unused imports — tests may import to verify importability
+    "F811",  # redefinition — parametrize + fixture patterns trigger this
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+disallow_untyped_defs = true
+warn_unused_ignores = true
+no_implicit_optional = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.semantic_release]
+version_variables = ["backend/__init__.py:__version__"]
+version_toml = ["pyproject.toml:project.version"]
+major_on_zero = true
+branch = "main"
+upload_to_vcs_release = true
+parse_squash_commits = true
+
+[tool.commitizen]
+name = "cz_conventional_commits"
+changelog_file = "CHANGELOG.md"
+tag_format = "v$version"

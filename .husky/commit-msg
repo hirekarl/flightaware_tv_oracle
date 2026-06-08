@@ -1,0 +1,17 @@
+#!/usr/bin/env sh
+
+# Strip Claude/Anthropic co-authored-by lines before commitlint validation.
+# This ensures AI tool attribution never lands in the repository history.
+if [ -f "$1" ]; then
+  node -e "
+const fs = require('fs');
+const msg = fs.readFileSync(process.argv[1], 'utf8');
+const cleaned = msg
+  .split('\n')
+  .filter(line => !/^Co-authored-by:.*(?:claude|anthropic)/i.test(line))
+  .join('\n');
+fs.writeFileSync(process.argv[1], cleaned);
+" "$1"
+fi
+
+npx --no -- commitlint --edit "$1"
