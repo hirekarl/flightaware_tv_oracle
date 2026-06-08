@@ -54,27 +54,35 @@ props — no `any`, no `unknown` without an explicit assertion.
 Invoke a skill to activate the relevant agent. The skill reads its knowledge base leaves
 before generating any code or docs.
 
+### TDD Orchestrator · `/orchestrate <feature>`
+Defines acceptance criteria as failing tests before any implementation begins.
+Reads the data contract, writes `pytest` or Vitest tests, confirms red, then hands off to a code agent.
+Never implements — only specifies.
+
 ### Backend Core Agent — `backend/` · `/backend <task>`
-FastAPI endpoints, Pydantic models, async event loops, SSE stream.
+Owned by **Karl**. FastAPI endpoints, Pydantic models, async event loops, SSE stream.
+Reads failing tests written by the Orchestrator, implements to green, runs mypy.
 Reject any raw `dict` where a typed Pydantic model should exist.
 
 ### Frontend UX Agent — `frontend/` · `/frontend <task>`
-React 19 components, SSE client hook, visual state (Normal / Warning / Critical).
+Owned by **Ahsan**. React 19 components, SSE client hook, visual state (Normal / Warning / Critical).
+Reads failing tests written by the Orchestrator, implements to green, runs Vitest.
 No third-party accessibility overlay widgets. TypeScript interfaces only — no `any`.
+
+### QA Agent — `frontend/e2e/`, `frontend/playwright.config.ts` · `/qa <task>`
+Playwright e2e flows and post-implementation suite verification.
+Injects axe-core into every browser workflow. Asserts Lighthouse accessibility score ≥ 95.
+Does not write unit or integration tests — those belong to the Orchestrator.
 
 ### Automation & Integration Agent — `.github/workflows/`, `.lighthouserc.cjs`
 CI pipeline, uv environment caching, parallelized GitHub Actions jobs.
 Any build failure must break the pipeline before merge.
 
-### QA Agent — `frontend/playwright.config.ts`, `frontend/vitest.config.ts`, `tests/` · `/qa <task>`
-Unit, component, and e2e tests. Axe-core injection in Playwright workflows.
-Assert Lighthouse accessibility score ≥ 95. Structural HTML invalidity must fail the suite.
-
 ### Archivist Agent — `README.md`, `TODO.md`, `ARCHITECTURE.md`, docstrings · `/docs-sync <task>`
 Keep `TODO.md` synchronized with sprint state after every merge.
 Strip boilerplate from all output. Dense, actionable prose only.
 
-### Multi-Agent Orchestration — `backend/agents/`
+### Runtime Multi-Agent Orchestration — `backend/agents/`
 
 ```
 coordinator.py       — delegates to Route + Crew agents, validates output against FlightState
@@ -120,6 +128,56 @@ implement only what is needed to pass them; the QA Agent owns e2e coverage and v
 | `/contract-check` | Diffs `FlightState` (Pydantic) against TypeScript interfaces; flags any drift |
 | `/sync-todo` | Rewrites `TODO.md` from `git log` + codebase state |
 | `/kb-update <url>` | Fetches a URL and synthesizes it into the matching knowledge base leaf |
+
+---
+
+## Workflows
+
+### New feature (standard TDD path)
+
+1. `git checkout main && git pull origin main`
+2. `git checkout -b feat/<scope>-<description>`
+3. `/orchestrate <feature>` — writes failing tests, confirms red
+4. `/backend <task>` or `/frontend <task>` — implements to green
+5. `/qa <task>` — adds Playwright e2e coverage for the user flow
+6. `/validate` — full check suite must pass clean before pushing
+7. Push → open PR → partner reviews → CI green → Squash and Merge
+
+### Karl's loop (backend, `backend/` + `tests/`)
+
+| Situation | Action |
+|---|---|
+| New backend feature | `/orchestrate` → `/backend` |
+| Backend bug fix | Write regression test directly → `/backend <fix>` |
+| Data contract change | Edit `backend/models/flight.py` → run `/contract-check` → coordinate with Ahsan |
+| Documentation | `/docs-sync` |
+
+### Ahsan's loop (frontend, `frontend/src/`)
+
+| Situation | Action |
+|---|---|
+| New UI feature | `/orchestrate` → `/frontend` |
+| Frontend bug fix | Write regression test directly → `/frontend <fix>` |
+| E2e / accessibility | `/qa` |
+| Data contract question | Run `/contract-check` to verify alignment with backend |
+
+### Cross-boundary feature (both involved)
+
+When a feature touches `FlightState` (Pydantic) and the TypeScript interfaces simultaneously:
+
+1. Agree on the schema change first — edit `backend/models/flight.py` and `frontend/src/types/flight.ts` together.
+2. Run `/contract-check` to confirm both sides are aligned before writing any feature code.
+3. Karl opens `feat/backend-<feature>` and Ahsan opens `feat/frontend-<feature>` in parallel.
+4. Each runs `/orchestrate` on their layer, then their code agent.
+5. Merge the backend PR first (it defines the SSE payload shape); frontend PR follows.
+
+### Bug fix
+
+1. `git checkout main && git pull origin main && git checkout -b fix/<description>`
+2. Write a failing test that reproduces the bug (skip `/orchestrate` — write the test directly).
+3. `/backend <fix>` or `/frontend <fix>` to implement.
+4. Confirm the regression test now passes.
+5. `/validate` → push → PR.
 
 ---
 
