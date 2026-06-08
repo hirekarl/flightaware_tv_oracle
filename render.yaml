@@ -16,7 +16,7 @@ services:
   # sleeps. The first SSE connection to a cold instance will stall for ~1 min
   # while it wakes. Acceptable for demo; use a paid plan for production.
   # ---------------------------------------------------------------------------
-  - name: flightaware-tv-api
+  - name: flightaware-tv-oracle-api
     type: web
     runtime: python
     plan: free
@@ -30,7 +30,7 @@ services:
       - key: GOOGLE_API_KEY
         sync: false  # Render prompts for this value on first deploy
       - key: CORS_ORIGINS
-        value: https://flightaware-tv.onrender.com
+        value: https://flightaware-tv-oracle.onrender.com
 
   # ---------------------------------------------------------------------------
   # Frontend — React 19 + Vite static site
@@ -38,7 +38,7 @@ services:
   # VITE_API_URL is injected at build time (Vite embeds it in the bundle).
   # Wire it in useFleetStream before deploying the first time.
   # ---------------------------------------------------------------------------
-  - name: flightaware-tv
+  - name: flightaware-tv-oracle
     type: web
     runtime: static
     plan: free
@@ -48,7 +48,7 @@ services:
     staticPublishPath: ./frontend/dist
     envVars:
       - key: VITE_API_URL
-        value: https://flightaware-tv-api.onrender.com
+        value: https://flightaware-tv-oracle-api.onrender.com
     routes:
       - type: rewrite
         source: "/*"
