@@ -5,11 +5,7 @@
 
 export type OperationalStatus = 'NORMAL' | 'WARNING' | 'CRITICAL';
 
-export type DeviationType =
-  | 'GO_AROUND'
-  | 'HOLDING_PATTERN'
-  | 'DIVERSION'
-  | 'NONE';
+export type DeviationType = 'GO_AROUND' | 'HOLDING_PATTERN' | 'DIVERSION' | 'NONE';
 
 export interface Route {
   readonly departure: string;

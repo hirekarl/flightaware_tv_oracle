@@ -9,7 +9,7 @@ Project Name: FlightAware TV (AI Fleet Disruption Oracle)
 Team: Karl Johnson (Jr SWE, Pursuit AI Fellow, Per Scholas/CS50x alum), Ahsan Abbasi
 Target Audience: Airline Operations Dispatchers managing active fleet movements under high stress.
 
-Core Problem: 
+Core Problem:
 Traditional tracking dashboards are reactive, outputting contextless text strings and raw JSON data streams. During flight deviations (e.g., go-arounds, holding patterns), dispatchers spend 10–15 critical minutes manually cross-referencing telemetry with weather charts and crew legal limits, causing severe terminal gate bottlenecks, missed connection windows, and crew timeout risks.
 
 The Solution:
@@ -22,7 +22,7 @@ Architecture Philosophy:
 
 ### 1a. THE FRONTEND/BACKEND DATA CONTRACT
 
-To maintain strict architectural decoupling and prevent payload structural drift, both the Python backend and TypeScript frontend must implement type validation against this exact JSON data schema contract. 
+To maintain strict architectural decoupling and prevent payload structural drift, both the Python backend and TypeScript frontend must implement type validation against this exact JSON data schema contract.
 
 - The backend must enforce this schema using Pydantic v2.
 - The frontend must map this schema into immutable TypeScript interfaces or types.
@@ -153,7 +153,7 @@ To enforce local workspace hygiene and consistent formatting standard across dev
 
 ### 6. TEAM BRANCHING, MERGING, & PULL REQUEST PROTOCOL
 
-To maximize velocity and eliminate merge debt in a highly coordinated team of two, we adhere to a structured, main-branch-protection workflow. 
+To maximize velocity and eliminate merge debt in a highly coordinated team of two, we adhere to a structured, main-branch-protection workflow.
 
 #### 1. Branch Naming Conventions
 All branch names must be lowercase, hyphenated, and prefixed by the specific development lifecycle subagent category or task type:
@@ -179,7 +179,7 @@ All branch names must be lowercase, hyphenated, and prefixed by the specific dev
 
 ### 7. COLLABORATIVE MULTI-AGENT ORCHESTRATION WORKSPACE
 
-A major focus of this build is developing multi-agent orchestration and delegation systems to manage professional workflows within an AI context. 
+A major focus of this build is developing multi-agent orchestration and delegation systems to manage professional workflows within an AI context.
 
 As my development collaborator, I want you to design the codebase to support specialized subagents and execution skills. Specifically, map out structural modules or service layers in our directory footprint where the following subagents will run:
 - A Route Analytics Agent: Responsible for reading telemetry anomalies and querying external weather/runway mock data.

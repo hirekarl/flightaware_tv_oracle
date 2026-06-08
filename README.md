@@ -19,22 +19,45 @@ flightaware_tv_oracle/
 └── package.json          # Root: Husky + commitlint only
 ```
 
-## Quick Start
+## Developer Setup
 
-**Backend**
+### Prerequisites
+
+- **uv** — Python package manager
+  - macOS / Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`
+  - Windows: `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
+- **Node.js 20+** with npm
+
+### First-time setup (run once after cloning)
 
 ```bash
-uv sync --group dev
-uv run uvicorn backend.main:app --reload
-# → http://localhost:8000
+# Python environment + all dependencies (backend + dev tools)
+uv sync --all-groups
+
+# Root Node deps — installs Husky git hooks and commitlint
+npm install
+
+# Frontend deps
+cd frontend && npm install && cd ..
+
+# Download pre-commit hook environments (one-time, requires network)
+uv run pre-commit install-hooks
+
+# Copy the environment template and fill in your API key
+cp .env.example .env
 ```
 
-**Frontend**
+### Running the dev servers
+
+Open two terminals from the repo root:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+# Terminal 1 — backend
+uv run uvicorn backend.main:app --reload
+# → http://localhost:8000
+
+# Terminal 2 — frontend
+cd frontend && npm run dev
 # → http://localhost:5173
 ```
 
