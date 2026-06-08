@@ -118,16 +118,20 @@ lhci autorun
 
 Project-level slash commands available in any Claude Code session. Skills live in `.claude/commands/`.
 
+Code agents follow a TDD cycle: `/orchestrate` writes failing tests first; `/backend` and
+`/frontend` implement only what is needed to pass them; `/qa` owns e2e coverage.
+
 | Skill | Usage | What it does |
 |---|---|---|
+| `/orchestrate` | `/orchestrate <feature>` | TDD entry point — writes failing tests, confirms red, hands off to code agent |
+| `/backend` | `/backend <task>` | Backend Core Agent — reads failing tests, implements to green, runs mypy |
+| `/frontend` | `/frontend <task>` | Frontend UX Agent — reads failing tests, implements to green, runs Vitest |
+| `/qa` | `/qa <task>` | QA Agent — Playwright e2e tests, axe-core injection, full suite verification |
+| `/docs-sync` | `/docs-sync <task>` | Archivist Agent: documentation and knowledge base maintenance |
 | `/validate` | `/validate` | Runs ruff → mypy → pytest → tsc → vitest; reports pass/fail per check |
 | `/contract-check` | `/contract-check` | Diffs `FlightState` Pydantic model against TypeScript interfaces; flags drift |
 | `/sync-todo` | `/sync-todo` | Rewrites `TODO.md` from `git log` + codebase structure |
 | `/kb-update` | `/kb-update <url>` | Fetches a URL and synthesizes it into the matching `.knowledge_base/` leaf |
-| `/backend` | `/backend <task>` | Backend Core Agent: reads KB leaves, then implements in `backend/` |
-| `/frontend` | `/frontend <task>` | Frontend UX Agent: reads KB leaves, then implements in `frontend/` |
-| `/qa` | `/qa <task>` | QA Agent: reads KB leaves, then writes tests |
-| `/docs-sync` | `/docs-sync <task>` | Archivist Agent: documentation and knowledge base maintenance |
 
 ## CI/CD Pipeline
 

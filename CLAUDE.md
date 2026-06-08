@@ -106,16 +106,20 @@ identification → synthesis → resource entry automatically.
 
 Project-level slash commands in `.claude/commands/`. Invoke from any Claude Code session.
 
+Code agents follow a TDD cycle: the Orchestrator writes failing tests first; code agents
+implement only what is needed to pass them; the QA Agent owns e2e coverage and verification.
+
 | Skill | Purpose |
 |---|---|
+| `/orchestrate <feature>` | **TDD entry point.** Writes failing tests, confirms red, hands off to code agent |
+| `/backend <task>` | Backend Core Agent — reads failing tests, implements to green, runs mypy |
+| `/frontend <task>` | Frontend UX Agent — reads failing tests, implements to green, runs Vitest |
+| `/qa <task>` | QA Agent — writes Playwright e2e tests, injects axe-core, verifies full suite |
+| `/docs-sync <task>` | Archivist Agent — documentation and KB maintenance |
 | `/validate` | Runs the full check suite — ruff, mypy, pytest, tsc, vitest — and reports pass/fail |
 | `/contract-check` | Diffs `FlightState` (Pydantic) against TypeScript interfaces; flags any drift |
 | `/sync-todo` | Rewrites `TODO.md` from `git log` + codebase state |
 | `/kb-update <url>` | Fetches a URL and synthesizes it into the matching knowledge base leaf |
-| `/backend <task>` | Activates Backend Core Agent; reads KB leaves before writing code |
-| `/frontend <task>` | Activates Frontend UX Agent; reads KB leaves before writing code |
-| `/qa <task>` | Activates QA Agent; reads KB leaves before writing tests |
-| `/docs-sync <task>` | Activates Archivist Agent for documentation and KB maintenance |
 
 ---
 
