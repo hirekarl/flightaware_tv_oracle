@@ -8,7 +8,11 @@ on the production Vite build. Blocks merge if the score drops below threshold.
 
 ## Key Patterns
 
-### .lighthouserc.js structure
+### .lighthouserc.cjs structure
+
+The root `package.json` sets `"type": "module"`, so the config must use the `.cjs`
+extension to stay in CommonJS scope. Renaming to `.lighthouserc.js` will break it.
+
 ```javascript
 module.exports = {
   ci: {
@@ -34,7 +38,7 @@ module.exports = {
 ### Running locally
 ```bash
 cd frontend && npm run build     # must build first
-cd ..                            # run lhci from repo root (where .lighthouserc.js lives)
+cd ..                            # run lhci from repo root (where .lighthouserc.cjs lives)
 lhci autorun
 ```
 
@@ -56,7 +60,7 @@ lhci autorun
 
 ## Gotchas
 
-- `lhci autorun` must be called from the directory containing `.lighthouserc.js`
+- `lhci autorun` must be called from the directory containing `.lighthouserc.cjs`
   (repo root in this project). The `staticDistDir` path is relative to that location.
 - `numberOfRuns: 3` reduces accessibility score variance from a cold single run.
   Accessibility scores are generally stable; performance fluctuates more.

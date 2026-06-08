@@ -62,7 +62,7 @@ Reject any raw `dict` where a typed Pydantic model should exist.
 React 19 components, SSE client hook, visual state (Normal / Warning / Critical).
 No third-party accessibility overlay widgets. TypeScript interfaces only — no `any`.
 
-### Automation & Integration Agent — `.github/workflows/`, `.lighthouserc.js`
+### Automation & Integration Agent — `.github/workflows/`, `.lighthouserc.cjs`
 CI pipeline, uv environment caching, parallelized GitHub Actions jobs.
 Any build failure must break the pipeline before merge.
 
