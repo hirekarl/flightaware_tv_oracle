@@ -13,6 +13,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
+from backend import __version__
 from backend.agents.coordinator import CoordinatorAgent
 from backend.models.flight import FlightState, OperationalStatus
 from backend.simulation import generate_mock_fleet
@@ -33,7 +34,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 app = FastAPI(
     title="FlightAware TV Oracle",
-    version="0.1.0",
+    version=__version__,
     lifespan=lifespan,
 )
 
