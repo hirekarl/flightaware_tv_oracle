@@ -11,21 +11,27 @@
 **Window:** 2026-06-08 → 2026-06-14
 
 ### Done
+
 - [x] Bootstrap monorepo (pyproject.toml, directory layout, CI scaffold)
 - [x] Wire pre-commit hooks and developer setup docs
 - [x] Define `FlightState` data contract (`backend/models/flight.py` + `frontend/src/types/flight.ts`)
 - [x] Scaffold agent modules (`coordinator.py`, `route_analytics.py`, `crew_logistics.py`)
 - [x] Set up Claude Code skills (`.claude/commands/`)
+- [x] Implement `RouteAnalyticsAgent.analyze()` — telemetry anomaly detection against mock weather/runway data
+- [x] Implement `CrewLogisticsAgent.assess()` — duty time limit + gate constraint computation
+- [x] Implement `CoordinatorAgent.analyze()` — delegates to Route + Crew, validates output against `FlightState`
+- [x] Wire `CoordinatorAgent` into `/api/fleet/stream` SSE endpoint (replace static mock)
+- [x] Integrate Instructor + Gemini for structured AI analysis inside `CoordinatorAgent`
+- [x] Add structured logging: elapsed_ms per flight enrichment per SSE cycle
+- [x] Write `pytest` tests for all agent `analyze()` / `assess()` return shapes (47 tests total)
+- [x] SSE integration tests: HTTP contract, event format, payload schema, NORMAL-bypass invariant
+- [x] `.env.example` with `GOOGLE_API_KEY` and `CORS_ORIGINS` placeholders
+- [x] `GH_TOKEN` secret configured in GitHub repository settings
+- [x] Branch protection on `main` (1 approval required + 3 CI checks green + enforce_admins)
 
 ### Karl — Backend
 
-- [ ] Implement `RouteAnalyticsAgent.analyze()` — telemetry anomaly detection against mock weather/runway data
-- [ ] Implement `CrewLogisticsAgent.assess()` — duty time limit + gate constraint computation
-- [ ] Implement `CoordinatorAgent.analyze()` — delegates to Route + Crew, validates output against `FlightState`
-- [ ] Wire `CoordinatorAgent` into `/api/fleet/stream` SSE endpoint (replace static mock)
-- [ ] Integrate Instructor + Gemini for structured AI analysis inside `CoordinatorAgent`
-- [ ] Add structured logging: forecast vs. actual simulation metrics per SSE cycle
-- [ ] Write `pytest` tests for all agent `analyze()` / `assess()` return shapes
+Nothing outstanding for Sprint 1.
 
 ### Ahsan — Frontend
 
@@ -40,11 +46,7 @@
 
 ### Shared / Infra
 
-- [ ] Add `.env.example` with `GEMINI_API_KEY` placeholder and FastAPI CORS origin config
-- [ ] Enable GitHub branch protection on `main` (require PR approval + all CI checks green)
-- [ ] Add `GH_TOKEN` secret in GitHub repository settings (for automated-release job)
 - [ ] Configure Playwright to run against a local backend stub for e2e isolation
-- [ ] Verify `lhci autorun` passes locally before first PR to `main`
 
 ---
 
@@ -56,7 +58,6 @@
 ### Backend
 
 - [ ] Rate limiting on `/api/fleet/stream` (prevent client reconnect storms)
-- [ ] Integration tests for the SSE endpoint (assert event format + connection lifecycle)
 - [ ] Real-world telemetry adapter (swap mock data for AeroAPI or similar)
 
 ### Frontend
