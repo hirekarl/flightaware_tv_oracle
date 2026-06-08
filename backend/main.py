@@ -1,6 +1,10 @@
 """FlightAware TV — AI Fleet Disruption Oracle API."""
 
+import asyncio
+import json
+import logging
 import os
+import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -9,8 +13,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
-from backend.models.flight import FlightState
+from backend.agents.coordinator import CoordinatorAgent
+from backend.models.flight import FlightState, OperationalStatus
 from backend.simulation import generate_mock_fleet
+
+logger = logging.getLogger(__name__)
 
 _cors_origins = [
     o.strip()
@@ -50,14 +57,37 @@ async def get_fleet() -> list[FlightState]:
     return generate_mock_fleet()
 
 
-async def _sse_fleet_stream() -> AsyncGenerator[str, None]:
-    """Yield SSE-formatted fleet state payloads every 5 seconds."""
-    import asyncio
-    import json
+async def _enrich_flight(
+    coordinator: CoordinatorAgent, flight: FlightState
+) -> FlightState:
+    """Return flight with AI analysis; NORMAL flights pass through unchanged."""
+    if flight.operationalStatus == OperationalStatus.NORMAL:
+        return flight
+    t0 = time.perf_counter()
+    ai_analysis = await coordinator.analyze(flight)
+    elapsed_ms = (time.perf_counter() - t0) * 1000
+    logger.info(
+        "analyzed flight=%s status=%s elapsed_ms=%.1f",
+        flight.flightId,
+        flight.operationalStatus,
+        elapsed_ms,
+    )
+    return flight.model_copy(update={"aiAnalysis": ai_analysis})
 
+
+async def _sse_fleet_stream() -> AsyncGenerator[str, None]:
+    """Yield SSE-formatted fleet state payloads every 5 seconds.
+
+    WARNING and CRITICAL flights receive AI-generated analysis via CoordinatorAgent;
+    NORMAL flights are passed through with their simulation data unchanged.
+    """
+    coordinator = CoordinatorAgent()
     while True:
         fleet = generate_mock_fleet()
-        payload = json.dumps([f.model_dump() for f in fleet])
+        enriched = await asyncio.gather(
+            *[_enrich_flight(coordinator, f) for f in fleet]
+        )
+        payload = json.dumps([f.model_dump() for f in enriched])
         yield f"data: {payload}\n\n"
         await asyncio.sleep(5)
 
