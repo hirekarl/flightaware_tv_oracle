@@ -2,7 +2,9 @@
 
 import asyncio
 import json
+import logging
 import os
+import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -20,6 +22,8 @@ _cors_origins = [
     for o in os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",")
     if o.strip()
 ]
+
+_logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -59,11 +63,31 @@ async def _sse_fleet_stream(
     coordinator: CoordinatorAgent,
 ) -> AsyncGenerator[str, None]:
     while True:
+        start = time.monotonic()
         fleet = generate_mock_fleet()
         analyzed: list[FlightState] = []
+        flight_metrics: list[dict[str, str]] = []
         for flight in fleet:
+            forecast_title = flight.aiAnalysis.summaryTitle
             analysis = await coordinator.analyze(flight)
             analyzed.append(flight.model_copy(update={"aiAnalysis": analysis}))
+            flight_metrics.append(
+                {
+                    "flight_id": flight.flightId,
+                    "status": str(flight.operationalStatus),
+                    "forecast_title": forecast_title,
+                    "actual_title": analysis.summaryTitle,
+                }
+            )
+        elapsed_ms = round((time.monotonic() - start) * 1000, 3)
+        _logger.info(
+            "sse_cycle_complete",
+            extra={
+                "fleet_size": len(fleet),
+                "elapsed_ms": elapsed_ms,
+                "flights": flight_metrics,
+            },
+        )
         payload = json.dumps([f.model_dump() for f in analyzed])
         yield f"data: {payload}\n\n"
         await asyncio.sleep(5)
