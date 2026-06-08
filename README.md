@@ -15,6 +15,7 @@ flightaware_tv_oracle/
 │       └── types/        # TypeScript interfaces (mirrors Pydantic models)
 ├── tests/                # pytest test suite
 ├── .github/workflows/    # CI pipeline
+├── render.yaml           # Render Blueprint (free-tier API + static site)
 ├── pyproject.toml        # Python backend config (uv, ruff, mypy, pytest, semantic-release)
 └── package.json          # Root: Husky + commitlint only
 ```
@@ -113,6 +114,20 @@ cd frontend && npm run test:e2e
 # Accessibility audit (Lighthouse CI)
 lhci autorun
 ```
+
+## Deployment
+
+The project deploys via a [Render Blueprint](render.yaml) — connect the repo in the Render dashboard
+and it provisions both services automatically.
+
+| Service | Plan | URL |
+|---|---|---|
+| API (`flightaware-tv-oracle-api`) | Free web service | `https://flightaware-tv-oracle-api.onrender.com` |
+| Frontend (`flightaware-tv-oracle`) | Free static site | `https://flightaware-tv-oracle.onrender.com` |
+
+**First deploy:** Render will prompt for `GOOGLE_API_KEY` — have it ready.
+**Free-tier caveat:** the API spins down after 15 min of inactivity; the first SSE connection to a
+cold instance takes ~1 min to wake. Use a paid plan for production.
 
 ## Claude Code Skills
 
