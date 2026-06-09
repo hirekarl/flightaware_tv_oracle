@@ -25,10 +25,17 @@ class CrewLogisticsAgent:
         fuel = flight.telemetry.fuelRemainingMin
         status = flight.operationalStatus
 
-        if status == OperationalStatus.CRITICAL and fuel < _FUEL_CRITICAL_THRESHOLD:
+        if status == OperationalStatus.CRITICAL:
+            if fuel < _FUEL_CRITICAL_THRESHOLD:
+                return {
+                    "impact": (
+                        f"Fuel critical: {fuel} min remaining. "
+                        "Crew duty limit exposure high. Gate conflict imminent."
+                    )
+                }
             return {
                 "impact": (
-                    f"Fuel critical: {fuel} min remaining. "
+                    f"Fuel adequate ({fuel} min) but status critical. "
                     "Crew duty limit exposure high. Gate conflict imminent."
                 )
             }
