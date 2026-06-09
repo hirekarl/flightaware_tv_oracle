@@ -1,7 +1,7 @@
 # FlightAware TV — Sprint Board
 
 > Maintained by the Archivist Agent. Run `/sync-todo` after every merge to keep this current.
-> Last updated: 2026-06-08
+> Last updated: 2026-06-09
 
 ---
 
@@ -23,15 +23,16 @@
 - [x] Wire `CoordinatorAgent` into `/api/fleet/stream` SSE endpoint (replace static mock)
 - [x] Integrate Instructor + Gemini for structured AI analysis inside `CoordinatorAgent`
 - [x] Add structured logging: elapsed_ms per flight enrichment per SSE cycle
-- [x] Write `pytest` tests for all agent `analyze()` / `assess()` return shapes (47 tests total)
-- [x] SSE integration tests: HTTP contract, event format, payload schema, NORMAL-bypass invariant
+- [x] Write `pytest` tests for all agent `analyze()` / `assess()` return shapes
+- [x] SSE integration tests: HTTP contract, event format, payload schema, NORMAL-bypass invariant (PR #2 — pending merge)
 - [x] `.env.example` with `GOOGLE_API_KEY` and `CORS_ORIGINS` placeholders
 - [x] `GH_TOKEN` secret configured in GitHub repository settings
 - [x] Branch protection on `main` (1 approval required + 3 CI checks green + enforce_admins)
+- [x] Dependabot config for pip, npm, and Actions
 
 ### Karl — Backend
 
-Nothing outstanding for Sprint 1.
+PRs in review: #1 (agent tests + SSE wiring), #2 (integration tests), #6 (rate limiting), #7 (parallelization). Nothing left to write for Sprint 1.
 
 ### Ahsan — Frontend
 
@@ -57,7 +58,9 @@ Nothing outstanding for Sprint 1.
 
 ### Backend
 
-- [ ] Rate limiting on `/api/fleet/stream` (prevent client reconnect storms)
+- [ ] Rate limiting on `/api/fleet/stream` — reject at configurable concurrent connection ceiling, return 429 + Retry-After (PR #6 in review)
+- [ ] Parallelize coordinator LLM calls with `asyncio.gather()` — eliminates N × LLM-latency cycle inflation (PR #7 in review)
+- [ ] Derive expected fleet IDs in `test_sse_*` from `generate_mock_fleet()` — prevents silent rot if mock fleet changes (covered in PRs #2 + #7)
 - [ ] Real-world telemetry adapter (swap mock data for AeroAPI or similar)
 
 ### Frontend
@@ -69,7 +72,6 @@ Nothing outstanding for Sprint 1.
 ### Shared / Infra
 
 - [ ] Performance baseline — measure and document SSE throughput under simulated load
-- [ ] Add Dependabot config for automated dependency PRs
 
 ---
 
