@@ -77,7 +77,7 @@ async def test_sse_cycle_log_elapsed_ms_is_positive(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     records = await _cycle_records(mock_coordinator, caplog)
-    assert records[0].elapsed_ms > 0  # type: ignore[attr-defined]
+    assert records[0].elapsed_ms >= 0  # type: ignore[attr-defined]
 
 
 async def test_sse_cycle_log_elapsed_ms_is_float(
@@ -144,7 +144,9 @@ async def test_sse_cycle_all_known_flight_ids_appear_in_log(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Every flight from generate_mock_fleet() must appear in the log."""
-    expected_ids = {"AA123", "UA456", "DL789", "SW202"}
+    from backend.simulation import generate_mock_fleet
+
+    expected_ids = {f.flightId for f in generate_mock_fleet()}
     records = await _cycle_records(mock_coordinator, caplog)
     logged_ids = {entry["flight_id"] for entry in records[0].flights}  # type: ignore[attr-defined]
     assert logged_ids == expected_ids

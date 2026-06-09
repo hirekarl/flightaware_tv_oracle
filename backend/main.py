@@ -59,26 +59,31 @@ async def get_fleet() -> list[FlightState]:
     return generate_mock_fleet()
 
 
+async def _enrich_flight(
+    coordinator: CoordinatorAgent, flight: FlightState
+) -> tuple[FlightState, dict[str, str]]:
+    forecast_title = flight.aiAnalysis.summaryTitle
+    analysis = await coordinator.analyze(flight)
+    return (
+        flight.model_copy(update={"aiAnalysis": analysis}),
+        {
+            "flight_id": flight.flightId,
+            "status": str(flight.operationalStatus),
+            "forecast_title": forecast_title,
+            "actual_title": analysis.summaryTitle,
+        },
+    )
+
+
 async def _sse_fleet_stream(
     coordinator: CoordinatorAgent,
 ) -> AsyncGenerator[str, None]:
     while True:
         start = time.monotonic()
         fleet = generate_mock_fleet()
-        analyzed: list[FlightState] = []
-        flight_metrics: list[dict[str, str]] = []
-        for flight in fleet:
-            forecast_title = flight.aiAnalysis.summaryTitle
-            analysis = await coordinator.analyze(flight)
-            analyzed.append(flight.model_copy(update={"aiAnalysis": analysis}))
-            flight_metrics.append(
-                {
-                    "flight_id": flight.flightId,
-                    "status": str(flight.operationalStatus),
-                    "forecast_title": forecast_title,
-                    "actual_title": analysis.summaryTitle,
-                }
-            )
+        results = await asyncio.gather(*[_enrich_flight(coordinator, f) for f in fleet])
+        analyzed = [r[0] for r in results]
+        flight_metrics = [r[1] for r in results]
         elapsed_ms = round((time.monotonic() - start) * 1000, 3)
         _logger.info(
             "sse_cycle_complete",
