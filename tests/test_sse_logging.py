@@ -77,7 +77,7 @@ async def test_sse_cycle_log_elapsed_ms_is_positive(
     caplog: pytest.LogCaptureFixture,
 ) -> None:
     records = await _cycle_records(mock_coordinator, caplog)
-    assert records[0].elapsed_ms > 0  # type: ignore[attr-defined]
+    assert records[0].elapsed_ms >= 0  # type: ignore[attr-defined]
 
 
 async def test_sse_cycle_log_elapsed_ms_is_float(

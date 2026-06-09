@@ -11,8 +11,9 @@ from fastapi.responses import StreamingResponse
 from backend.agents.coordinator import CoordinatorAgent
 from backend.main import _sse_fleet_stream, app, stream_fleet
 from backend.models.flight import AiAnalysis, FlightState
+from backend.simulation import generate_mock_fleet
 
-_MOCK_FLEET_IDS = {"AA123", "UA456", "DL789", "SW202"}
+_MOCK_FLEET_IDS = {f.flightId for f in generate_mock_fleet()}
 
 
 def _stub_analysis() -> AiAnalysis:
