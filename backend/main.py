@@ -14,10 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 
 from backend.agents.coordinator import CoordinatorAgent
-from backend.models.flight import FlightState, OperationalStatus
+from backend.models.flight import FlightState
 from backend.simulation import generate_mock_fleet
-
-logger = logging.getLogger(__name__)
 
 _cors_origins = [
     o.strip()
@@ -25,9 +23,13 @@ _cors_origins = [
     if o.strip()
 ]
 
+_logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Initialize shared resources for the application lifetime."""
+    app.state.coordinator = CoordinatorAgent()
     yield
 
 
@@ -57,37 +59,36 @@ async def get_fleet() -> list[FlightState]:
     return generate_mock_fleet()
 
 
-async def _enrich_flight(
-    coordinator: CoordinatorAgent, flight: FlightState
-) -> FlightState:
-    """Return flight with AI analysis; NORMAL flights pass through unchanged."""
-    if flight.operationalStatus == OperationalStatus.NORMAL:
-        return flight
-    t0 = time.perf_counter()
-    ai_analysis = await coordinator.analyze(flight)
-    elapsed_ms = (time.perf_counter() - t0) * 1000
-    logger.info(
-        "analyzed flight=%s status=%s elapsed_ms=%.1f",
-        flight.flightId,
-        flight.operationalStatus,
-        elapsed_ms,
-    )
-    return flight.model_copy(update={"aiAnalysis": ai_analysis})
-
-
-async def _sse_fleet_stream() -> AsyncGenerator[str, None]:
-    """Yield SSE-formatted fleet state payloads every 5 seconds.
-
-    WARNING and CRITICAL flights receive AI-generated analysis via CoordinatorAgent;
-    NORMAL flights are passed through with their simulation data unchanged.
-    """
-    coordinator = CoordinatorAgent()
+async def _sse_fleet_stream(
+    coordinator: CoordinatorAgent,
+) -> AsyncGenerator[str, None]:
     while True:
+        start = time.monotonic()
         fleet = generate_mock_fleet()
-        enriched = await asyncio.gather(
-            *[_enrich_flight(coordinator, f) for f in fleet]
+        analyzed: list[FlightState] = []
+        flight_metrics: list[dict[str, str]] = []
+        for flight in fleet:
+            forecast_title = flight.aiAnalysis.summaryTitle
+            analysis = await coordinator.analyze(flight)
+            analyzed.append(flight.model_copy(update={"aiAnalysis": analysis}))
+            flight_metrics.append(
+                {
+                    "flight_id": flight.flightId,
+                    "status": str(flight.operationalStatus),
+                    "forecast_title": forecast_title,
+                    "actual_title": analysis.summaryTitle,
+                }
+            )
+        elapsed_ms = round((time.monotonic() - start) * 1000, 3)
+        _logger.info(
+            "sse_cycle_complete",
+            extra={
+                "fleet_size": len(fleet),
+                "elapsed_ms": elapsed_ms,
+                "flights": flight_metrics,
+            },
         )
-        payload = json.dumps([f.model_dump() for f in enriched])
+        payload = json.dumps([f.model_dump() for f in analyzed])
         yield f"data: {payload}\n\n"
         await asyncio.sleep(5)
 
@@ -95,8 +96,9 @@ async def _sse_fleet_stream() -> AsyncGenerator[str, None]:
 @app.get("/api/fleet/stream")
 async def stream_fleet() -> StreamingResponse:
     """SSE endpoint — pushes live fleet state updates to connected clients."""
+    coordinator: CoordinatorAgent = app.state.coordinator
     return StreamingResponse(
-        _sse_fleet_stream(),
+        _sse_fleet_stream(coordinator),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
