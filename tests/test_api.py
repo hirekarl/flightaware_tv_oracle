@@ -2,15 +2,22 @@
 
 import json
 from collections.abc import Generator
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
 from fastapi.responses import StreamingResponse
 
 from backend.agents.coordinator import CoordinatorAgent
-from backend.main import _sse_fleet_stream, app, stream_fleet
-from backend.models.flight import AiAnalysis, FlightState
+from backend.main import _enrich_flight, _sse_fleet_stream, app, stream_fleet
+from backend.models.flight import (
+    AiAnalysis,
+    DeviationType,
+    FlightState,
+    OperationalStatus,
+    Route,
+    Telemetry,
+)
 from backend.simulation import generate_mock_fleet
 
 _MOCK_FLEET_IDS = {f.flightId for f in generate_mock_fleet()}
@@ -27,15 +34,41 @@ def _stub_analysis() -> AiAnalysis:
 
 @pytest.fixture(autouse=True)
 def seed_coordinator() -> Generator[None, None, None]:
-    """Seed app.state.coordinator with a mock for every test in this module."""
+    """Seed app.state for every test in this module."""
     mock: CoordinatorAgent = AsyncMock(spec=CoordinatorAgent)
     mock.analyze.return_value = _stub_analysis()  # type: ignore[attr-defined]
     app.state.coordinator = mock
+    app.state.active_sse_connections = 0
+    app.state.max_sse_connections = 10
     yield
-    try:
-        delattr(app.state, "coordinator")
-    except (AttributeError, KeyError):
-        pass
+    for attr in ("coordinator", "active_sse_connections", "max_sse_connections"):
+        try:
+            delattr(app.state, attr)
+        except (AttributeError, KeyError):
+            pass
+
+
+def _mock_coordinator() -> MagicMock:
+    mock = MagicMock()
+    mock.analyze = AsyncMock(return_value=_stub_analysis())
+    return mock
+
+
+def _flight(status: OperationalStatus = OperationalStatus.NORMAL) -> FlightState:
+    return FlightState(
+        flightId="TS001",
+        aircraftType="B738",
+        route=Route(departure="KJFK", destination="KORD"),
+        operationalStatus=status,
+        deviationType=DeviationType.NONE,
+        telemetry=Telemetry(fuelRemainingMin=120, altitude=35000),
+        aiAnalysis=AiAnalysis(
+            summaryTitle="Test",
+            rootCause=".",
+            downstreamImpact=".",
+            recommendedAction=".",
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -160,3 +193,36 @@ async def test_sse_payload_items_validate_as_flight_states(
 async def test_sse_payload_contains_all_flights(first_sse_event: str) -> None:
     payload = json.loads(first_sse_event[len("data: ") :].strip())
     assert {item["flightId"] for item in payload} == _MOCK_FLEET_IDS
+
+
+# ---------------------------------------------------------------------------
+# _enrich_flight() — AI enrichment for all flights
+# ---------------------------------------------------------------------------
+
+
+async def test_enrich_flight_calls_coordinator_for_all_statuses() -> None:
+    for status in (
+        OperationalStatus.NORMAL,
+        OperationalStatus.WARNING,
+        OperationalStatus.CRITICAL,
+    ):
+        coord = _mock_coordinator()
+        flight = _flight(status)
+        await _enrich_flight(coord, flight)
+        coord.analyze.assert_called_once_with(flight)
+
+
+async def test_enriched_flight_carries_ai_analysis() -> None:
+    coord = _mock_coordinator()
+    enriched, _ = await _enrich_flight(coord, _flight(OperationalStatus.WARNING))
+    assert enriched.aiAnalysis.summaryTitle == "Stub"
+
+
+async def test_enrich_flight_returns_metrics_dict() -> None:
+    coord = _mock_coordinator()
+    flight = _flight(OperationalStatus.CRITICAL)
+    _, metrics = await _enrich_flight(coord, flight)
+    assert metrics["flight_id"] == flight.flightId
+    assert metrics["status"] == str(flight.operationalStatus)
+    assert "forecast_title" in metrics
+    assert "actual_title" in metrics

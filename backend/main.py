@@ -11,8 +11,9 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 
+from backend import __version__
 from backend.agents.coordinator import CoordinatorAgent
 from backend.models.flight import FlightState
 from backend.simulation import generate_mock_fleet
@@ -25,17 +26,21 @@ _cors_origins = [
 
 _logger = logging.getLogger(__name__)
 
+_SSE_RETRY_AFTER = 5
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Initialize shared resources for the application lifetime."""
     app.state.coordinator = CoordinatorAgent()
+    app.state.max_sse_connections = int(os.environ.get("SSE_MAX_CONNECTIONS", "10"))
+    app.state.active_sse_connections = 0
     yield
 
 
 app = FastAPI(
     title="FlightAware TV Oracle",
-    version="0.1.0",
+    version=__version__,
     lifespan=lifespan,
 )
 
@@ -59,26 +64,31 @@ async def get_fleet() -> list[FlightState]:
     return generate_mock_fleet()
 
 
+async def _enrich_flight(
+    coordinator: CoordinatorAgent, flight: FlightState
+) -> tuple[FlightState, dict[str, str]]:
+    forecast_title = flight.aiAnalysis.summaryTitle
+    analysis = await coordinator.analyze(flight)
+    return (
+        flight.model_copy(update={"aiAnalysis": analysis}),
+        {
+            "flight_id": flight.flightId,
+            "status": str(flight.operationalStatus),
+            "forecast_title": forecast_title,
+            "actual_title": analysis.summaryTitle,
+        },
+    )
+
+
 async def _sse_fleet_stream(
     coordinator: CoordinatorAgent,
 ) -> AsyncGenerator[str, None]:
     while True:
         start = time.monotonic()
         fleet = generate_mock_fleet()
-        analyzed: list[FlightState] = []
-        flight_metrics: list[dict[str, str]] = []
-        for flight in fleet:
-            forecast_title = flight.aiAnalysis.summaryTitle
-            analysis = await coordinator.analyze(flight)
-            analyzed.append(flight.model_copy(update={"aiAnalysis": analysis}))
-            flight_metrics.append(
-                {
-                    "flight_id": flight.flightId,
-                    "status": str(flight.operationalStatus),
-                    "forecast_title": forecast_title,
-                    "actual_title": analysis.summaryTitle,
-                }
-            )
+        results = await asyncio.gather(*[_enrich_flight(coordinator, f) for f in fleet])
+        analyzed = [r[0] for r in results]
+        flight_metrics = [r[1] for r in results]
         elapsed_ms = round((time.monotonic() - start) * 1000, 3)
         _logger.info(
             "sse_cycle_complete",
@@ -93,12 +103,33 @@ async def _sse_fleet_stream(
         await asyncio.sleep(5)
 
 
-@app.get("/api/fleet/stream")
-async def stream_fleet() -> StreamingResponse:
-    """SSE endpoint — pushes live fleet state updates to connected clients."""
+@app.get("/api/fleet/stream", response_model=None)
+async def stream_fleet() -> Response:
+    """SSE endpoint — pushes live fleet state updates to connected clients.
+
+    Returns 429 with a Retry-After header when the concurrent connection limit
+    is reached. Otherwise increments the active connection count and streams
+    fleet state events, decrementing the count when the connection closes.
+    """
+    if app.state.active_sse_connections >= app.state.max_sse_connections:
+        return JSONResponse(
+            {"detail": "Too many concurrent SSE connections. Try again later."},
+            status_code=429,
+            headers={"Retry-After": str(_SSE_RETRY_AFTER)},
+        )
+
     coordinator: CoordinatorAgent = app.state.coordinator
+    app.state.active_sse_connections += 1
+
+    async def _guarded_stream() -> AsyncGenerator[str, None]:
+        try:
+            async for chunk in _sse_fleet_stream(coordinator):
+                yield chunk
+        finally:
+            app.state.active_sse_connections -= 1
+
     return StreamingResponse(
-        _sse_fleet_stream(coordinator),
+        _guarded_stream(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",
