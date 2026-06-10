@@ -74,8 +74,8 @@ Playwright e2e flows and post-implementation suite verification.
 Injects axe-core into every browser workflow. Asserts Lighthouse accessibility score ≥ 95.
 Does not write unit or integration tests — those belong to the Orchestrator.
 
-### Automation & Integration Agent — `.github/workflows/`, `.lighthouserc.cjs`
-CI pipeline, uv environment caching, parallelized GitHub Actions jobs.
+### Automation & Integration Agent — `.github/workflows/`, `.lighthouserc.cjs`, `render.yaml`, `.github/dependabot.yml`
+CI pipeline, uv environment caching, parallelized GitHub Actions jobs, Render Blueprint, Dependabot.
 Any build failure must break the pipeline before merge.
 
 ### Archivist Agent — `README.md`, `TODO.md`, `ARCHITECTURE.md`, docstrings · `/docs-sync <task>`

@@ -1,0 +1,55 @@
+# Render Blueprint — FlightAware TV Oracle
+#
+# Both services run on the free tier:
+#   - API: free web service (spins down after 15 min inactivity; ~1 min cold-start)
+#   - Frontend: free static site (always on, no spin-down)
+#
+# Service names determine the onrender.com subdomains. If either name is already
+# taken, change it here and update the CORS_ORIGINS / VITE_API_URL values below
+# to match.
+
+services:
+  # ---------------------------------------------------------------------------
+  # Backend — FastAPI + uv, Python 3.12
+  #
+  # Free-tier spin-down caveat: after 15 min without a request the instance
+  # sleeps. The first SSE connection to a cold instance will stall for ~1 min
+  # while it wakes. Acceptable for demo; use a paid plan for production.
+  # ---------------------------------------------------------------------------
+  - name: flightaware-tv-oracle-api
+    type: web
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install uv && uv sync --no-dev
+    startCommand: uv run uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12"
+      - key: GOOGLE_API_KEY
+        sync: false  # Render prompts for this value on first deploy
+      - key: CORS_ORIGINS
+        value: https://flightaware-tv-oracle.onrender.com
+
+  # ---------------------------------------------------------------------------
+  # Frontend — React 19 + Vite static site
+  #
+  # VITE_API_URL is injected at build time (Vite embeds it in the bundle).
+  # Wire it in useFleetStream before deploying the first time.
+  # ---------------------------------------------------------------------------
+  - name: flightaware-tv-oracle
+    type: web
+    runtime: static
+    plan: free
+    region: oregon
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://flightaware-tv-oracle-api.onrender.com
+    routes:
+      - type: rewrite
+        source: "/*"
+        destination: /index.html

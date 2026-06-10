@@ -146,7 +146,7 @@ uv run pre-commit install-hooks
 
 # Environment variables
 cp .env.example .env
-# → open .env and fill in GEMINI_API_KEY
+# → open .env and fill in GOOGLE_API_KEY
 ```
 
 ---
