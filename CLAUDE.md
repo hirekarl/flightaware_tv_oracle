@@ -11,6 +11,18 @@ predictive, AI-driven action plans via a high-density web UI backed by a FastAPI
 
 ---
 
+## Session Start Checklist
+
+Karl works across two machines. At the start of every session, before touching any branch:
+
+```powershell
+gsync   # git checkout main && git pull origin main && git branch -v
+```
+
+If Karl hasn't done this yet, remind him before running any git commands.
+
+---
+
 ## CRITICAL: Commit Authorship
 
 **Never** add `Co-authored-by:` lines attributing Claude, Anthropic, or any AI tool to git commits.
