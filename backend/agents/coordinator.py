@@ -1,6 +1,7 @@
 """Coordinator Agent — orchestrates Route and Crew agents, validates output schema."""
 
 import asyncio
+from typing import Any
 
 import instructor
 
@@ -38,12 +39,13 @@ class CoordinatorAgent:
     google-genai SDK. This is the only agent the API layer interacts with directly.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, client: Any = None) -> None:
         self._route = RouteAnalyticsAgent()
         self._crew = CrewLogisticsAgent()
         # from_provider reads GOOGLE_API_KEY from env; async_client=True enables
         # native await-able calls without blocking the FastAPI event loop.
-        self._client = instructor.from_provider(_MODEL, async_client=True)
+        # Pass `client` in tests to inject a mock and avoid live API calls.
+        self._client = client or instructor.from_provider(_MODEL, async_client=True)
 
     async def analyze(self, flight: FlightState) -> AiAnalysis:
         """Orchestrate subagent analysis and return a validated `AiAnalysis`.
