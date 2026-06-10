@@ -1,7 +1,7 @@
 """Integration tests for FastAPI endpoints — HTTP contract and SSE event format."""
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
@@ -18,6 +18,14 @@ from backend.models.flight import (
 )
 
 _MOCK_FLEET_IDS = {"AA123", "UA456", "DL789", "SW202"}
+
+
+@pytest.fixture()
+def _init_stream_state() -> None:
+    """Populate app.state fields that the lifespan normally initialises."""
+    app.state.active_sse_connections = 0
+    app.state.max_sse_connections = 10
+    app.state.coordinator = _mock_coordinator()
 
 
 def _stub_analysis() -> AiAnalysis:
@@ -110,27 +118,23 @@ async def test_fleet_snapshot_items_validate_as_flight_states() -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_stream_returns_streaming_response() -> None:
-    with patch("backend.main.CoordinatorAgent"):
-        response = await stream_fleet()
+async def test_stream_returns_streaming_response(_init_stream_state: None) -> None:
+    response = await stream_fleet()
     assert isinstance(response, StreamingResponse)
 
 
-async def test_stream_media_type() -> None:
-    with patch("backend.main.CoordinatorAgent"):
-        response = await stream_fleet()
+async def test_stream_media_type(_init_stream_state: None) -> None:
+    response = await stream_fleet()
     assert response.media_type == "text/event-stream"
 
 
-async def test_stream_cache_control_header() -> None:
-    with patch("backend.main.CoordinatorAgent"):
-        response = await stream_fleet()
+async def test_stream_cache_control_header(_init_stream_state: None) -> None:
+    response = await stream_fleet()
     assert response.headers["cache-control"] == "no-cache"
 
 
-async def test_stream_x_accel_buffering_header() -> None:
-    with patch("backend.main.CoordinatorAgent"):
-        response = await stream_fleet()
+async def test_stream_x_accel_buffering_header(_init_stream_state: None) -> None:
+    response = await stream_fleet()
     assert response.headers["x-accel-buffering"] == "no"
 
 
@@ -143,13 +147,12 @@ async def test_stream_x_accel_buffering_header() -> None:
 @pytest.fixture
 async def first_sse_event() -> str:
     """Return the first raw SSE line from the generator with a mocked coordinator."""
-    with patch("backend.main.CoordinatorAgent") as MockClass:
-        MockClass.return_value = _mock_coordinator()
-        gen = _sse_fleet_stream()
-        try:
-            return await gen.__anext__()
-        finally:
-            await gen.aclose()
+    coord = _mock_coordinator()
+    gen = _sse_fleet_stream(coord)
+    try:
+        return await gen.__anext__()
+    finally:
+        await gen.aclose()
 
 
 async def test_sse_event_starts_with_data_prefix(first_sse_event: str) -> None:
@@ -180,31 +183,33 @@ async def test_sse_payload_contains_all_flights(first_sse_event: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# _enrich_flight() — NORMAL bypass and AI enrichment
+# _enrich_flight() — AI enrichment for all flights
 # ---------------------------------------------------------------------------
 
 
-async def test_normal_flight_bypasses_coordinator() -> None:
-    coord = _mock_coordinator()
-    await _enrich_flight(coord, _flight(OperationalStatus.NORMAL))
-    coord.analyze.assert_not_called()
-
-
-async def test_normal_flight_returned_unchanged() -> None:
-    flight = _flight(OperationalStatus.NORMAL)
-    coord = _mock_coordinator()
-    result = await _enrich_flight(coord, flight)
-    assert result is flight
-
-
-async def test_critical_flight_calls_coordinator() -> None:
-    coord = _mock_coordinator()
-    flight = _flight(OperationalStatus.CRITICAL)
-    await _enrich_flight(coord, flight)
-    coord.analyze.assert_called_once_with(flight)
+async def test_enrich_flight_calls_coordinator_for_all_statuses() -> None:
+    for status in (
+        OperationalStatus.NORMAL,
+        OperationalStatus.WARNING,
+        OperationalStatus.CRITICAL,
+    ):
+        coord = _mock_coordinator()
+        flight = _flight(status)
+        await _enrich_flight(coord, flight)
+        coord.analyze.assert_called_once_with(flight)
 
 
 async def test_enriched_flight_carries_ai_analysis() -> None:
     coord = _mock_coordinator()
-    result = await _enrich_flight(coord, _flight(OperationalStatus.WARNING))
-    assert result.aiAnalysis.summaryTitle == "Stub"
+    enriched, _ = await _enrich_flight(coord, _flight(OperationalStatus.WARNING))
+    assert enriched.aiAnalysis.summaryTitle == "Stub"
+
+
+async def test_enrich_flight_returns_metrics_dict() -> None:
+    coord = _mock_coordinator()
+    flight = _flight(OperationalStatus.CRITICAL)
+    _, metrics = await _enrich_flight(coord, flight)
+    assert metrics["flight_id"] == flight.flightId
+    assert metrics["status"] == str(flight.operationalStatus)
+    assert "forecast_title" in metrics
+    assert "actual_title" in metrics
