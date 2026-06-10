@@ -7,8 +7,29 @@ on:
     branches: [main, develop]
 
 jobs:
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'tests/**'
+              - 'pyproject.toml'
+            frontend:
+              - 'frontend/**'
+
   backend-validation:
     name: Backend — ruff, mypy, pytest
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,6 +54,8 @@ jobs:
 
   frontend-validation:
     name: Frontend — lint, tsc, vitest, playwright
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -60,8 +83,9 @@ jobs:
 
   accessibility-audit:
     name: Accessibility — Lighthouse CI (≥ 95)
+    needs: [changes, frontend-validation]
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
-    needs: [frontend-validation]
     steps:
       - uses: actions/checkout@v4
 
@@ -83,10 +107,22 @@ jobs:
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  ci-gate:
+    name: CI — all checks passed
+    runs-on: ubuntu-latest
+    needs: [backend-validation, frontend-validation, accessibility-audit]
+    if: always()
+    steps:
+      - name: Fail if any required job failed
+        run: |
+          if [[ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" == "true" ]]; then
+            exit 1
+          fi
+
   notify-slack:
     name: Slack — CI result
     runs-on: ubuntu-latest
-    needs: [backend-validation, frontend-validation, accessibility-audit]
+    needs: [ci-gate]
     if: always()
     steps:
       - name: Post result
@@ -96,13 +132,13 @@ jobs:
           webhook-type: incoming-webhook
           payload: |
             {
-              "text": "${{ contains(needs.*.result, 'failure') && ':red_circle: CI failed' || ':large_green_circle: CI passed' }} on `${{ github.ref_name }}`",
+              "text": "${{ needs.ci-gate.result == 'failure' && ':red_circle: CI failed' || ':large_green_circle: CI passed' }} on `${{ github.ref_name }}`",
               "blocks": [
                 {
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "${{ contains(needs.*.result, 'failure') && ':red_circle: *CI failed*' || ':large_green_circle: *CI passed*' }} — *${{ github.repository }}*\n*Branch:* `${{ github.ref_name }}`  *Actor:* ${{ github.actor }}\n*Backend:* ${{ needs.backend-validation.result }}  *Frontend:* ${{ needs.frontend-validation.result }}  *A11y:* ${{ needs.accessibility-audit.result }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
+                    "text": "${{ needs.ci-gate.result == 'failure' && ':red_circle: *CI failed*' || ':large_green_circle: *CI passed*' }} — *${{ github.repository }}*\n*Branch:* `${{ github.ref_name }}`  *Actor:* ${{ github.actor }}\n<${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>"
                   }
                 }
               ]
@@ -111,8 +147,11 @@ jobs:
   automated-release:
     name: Automated Release — semantic-release
     runs-on: ubuntu-latest
-    needs: [backend-validation, frontend-validation, accessibility-audit]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [ci-gate]
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      needs.ci-gate.result == 'success'
     permissions:
       contents: write
     steps:
