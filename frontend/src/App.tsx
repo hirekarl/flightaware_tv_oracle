@@ -1,10 +1,5 @@
-function App() {
-  return (
-    <main>
-      <h1>FlightAware TV</h1>
-      <p>Fleet Disruption Oracle — connecting to live feed&hellip;</p>
-    </main>
-  );
-}
+import AppLayout from './components/AppLayout';
 
-export default App;
+export default function App() {
+  return <AppLayout />;
+}
