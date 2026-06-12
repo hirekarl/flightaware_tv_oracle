@@ -24,20 +24,20 @@ function isInternational(ac: JFKAircraft): boolean {
 }
 
 function statusColor(ac: JFKAircraft): string {
-  if (isInternational(ac)) return '#00CFFF';
+  if (isInternational(ac)) return '#00A0E2';
   switch (ac.status) {
     case 'Taxiing':
-      return '#FFFFFF';
+      return '#00A0E2';
     case 'On Approach':
-      return '#39FF14';
+      return '#05A94B';
     case 'On Time':
-      return '#4A90D9';
+      return '#00A0E2';
     case 'Delayed':
       return '#F5A623';
     case 'Departed':
-      return '#39FF14';
+      return '#00A0E2';
     case 'Landed':
-      return '#888888';
+      return '#2A3E6B';
   }
 }
 
@@ -63,8 +63,8 @@ const MARKER_STYLE = `
 .aircraft-marker{display:flex;flex-direction:column;align-items:center;cursor:pointer;}
 .aircraft-icon{font-size:20px;line-height:1;}
 .aircraft-label{font-size:9px;font-family:monospace;color:#ffffff;margin-top:2px;text-shadow:0 0 3px #000000;white-space:nowrap;}
-.leaflet-tooltip.aircraft-tooltip{background:#1a2f4a!important;border:1px solid #4A90D9!important;color:#ffffff!important;font-family:monospace!important;font-size:12px!important;padding:8px 12px!important;border-radius:4px!important;white-space:nowrap!important;box-shadow:0 0 12px rgba(74,144,217,0.4)!important;}
-.leaflet-tooltip.aircraft-tooltip::before{border-top-color:#4A90D9!important;}
+.leaflet-tooltip.aircraft-tooltip{background:#0C1929!important;border:1px solid #00A0E2!important;color:#ffffff!important;font-family:monospace!important;font-size:12px!important;padding:8px 12px!important;border-radius:4px!important;white-space:nowrap!important;box-shadow:0 0 12px rgba(0,160,226,0.4)!important;}
+.leaflet-tooltip.aircraft-tooltip::before{border-top-color:#00A0E2!important;}
 .kjfk-label{color:#ffffff;font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;text-shadow:0 0 6px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;}
 `;
 
@@ -105,24 +105,7 @@ export default function MapPanel() {
       ).addTo(map);
 
       const tilePane = map.getPanes().tilePane as HTMLElement;
-      tilePane.style.filter =
-        'sepia(1) hue-rotate(140deg) saturate(2) brightness(0.75)';
-
-      L.polygon(
-        [
-          [40.653, -73.8],
-          [40.652, -73.785],
-          [40.651, -73.763],
-          [40.644, -73.75],
-          [40.629, -73.752],
-          [40.619, -73.762],
-          [40.615, -73.778],
-          [40.617, -73.795],
-          [40.623, -73.803],
-          [40.636, -73.804],
-        ] as [number, number][],
-        { color: '#4A90D9', weight: 2, fill: false, opacity: 0.85 }
-      ).addTo(map);
+      tilePane.style.filter = 'hue-rotate(205deg) saturate(3.5) brightness(0.55)';
 
       const kjfkIcon = L.divIcon({
         className: '',
@@ -188,7 +171,7 @@ export default function MapPanel() {
       <style>{MARKER_STYLE}</style>
       <div
         id="jfk-map"
-        style={{ width: '100%', height: '100%', background: '#0d1f1e' }}
+        style={{ width: '100%', height: '100%', background: '#062340' }}
       />
     </div>
   );

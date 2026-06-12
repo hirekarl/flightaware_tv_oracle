@@ -52,7 +52,7 @@ function Header() {
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '10px 16px',
-        borderBottom: '1px solid #1e3a5f',
+        borderBottom: '1px solid #2A3E6B',
         flexShrink: 0,
       }}
     >
@@ -132,7 +132,7 @@ export default function AppLayout() {
         style={{
           display: 'flex',
           background: 'var(--fa-navy)',
-          borderBottom: '1px solid #1e3a5f',
+          borderBottom: '1px solid #2A3E6B',
           flexShrink: 0,
         }}
       >
@@ -146,7 +146,7 @@ export default function AppLayout() {
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
-            color: activeTab === 'map' ? 'var(--fa-blue)' : '#8fa8c8',
+            color: activeTab === 'map' ? 'var(--fa-blue)' : '#2A3E6B',
             borderBottom:
               activeTab === 'map'
                 ? '2px solid var(--fa-blue)'
@@ -167,7 +167,7 @@ export default function AppLayout() {
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
-            color: activeTab === 'flights' ? 'var(--fa-blue)' : '#8fa8c8',
+            color: activeTab === 'flights' ? 'var(--fa-blue)' : '#2A3E6B',
             borderBottom:
               activeTab === 'flights'
                 ? '2px solid var(--fa-blue)'
