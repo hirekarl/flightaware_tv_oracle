@@ -65,6 +65,7 @@ const MARKER_STYLE = `
 .aircraft-label{font-size:9px;font-family:monospace;color:#ffffff;margin-top:2px;text-shadow:0 0 3px #000000;white-space:nowrap;}
 .leaflet-tooltip.aircraft-tooltip{background:#1a2f4a!important;border:1px solid #4A90D9!important;color:#ffffff!important;font-family:monospace!important;font-size:12px!important;padding:8px 12px!important;border-radius:4px!important;white-space:nowrap!important;box-shadow:0 0 12px rgba(74,144,217,0.4)!important;}
 .leaflet-tooltip.aircraft-tooltip::before{border-top-color:#4A90D9!important;}
+.kjfk-label{color:#ffffff;font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;text-shadow:0 0 6px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;}
 `;
 
 export default function MapPanel() {
@@ -95,9 +96,21 @@ export default function MapPanel() {
         boxZoom: false,
       });
 
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors © CARTO',
-      }).addTo(map);
+      L.tileLayer(
+        'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
+        {
+          attribution: '© OpenStreetMap contributors © CARTO',
+          opacity: 0.85,
+        }
+      ).addTo(map);
+
+      const kjfkIcon = L.divIcon({
+        className: '',
+        html: '<div class="kjfk-label">KJFK</div>',
+        iconSize: [60, 20],
+        iconAnchor: [30, 10],
+      });
+      L.marker([40.6413, -73.7781], { icon: kjfkIcon, interactive: false }).addTo(map);
 
       JFK_AIRCRAFT.forEach((ac) => {
         const marker = L.marker([ac.lat, ac.lon], { icon: makeIcon(ac) })
