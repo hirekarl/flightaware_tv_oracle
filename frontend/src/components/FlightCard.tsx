@@ -23,7 +23,7 @@ export default function FlightCard({ flight }: Props) {
   return (
     <article
       className={STATUS_CLASS[operationalStatus]}
-      style={{ ...STATUS_STYLE[operationalStatus], padding: '6px 12px', flex: 1 }}
+      style={{ padding: '6px 12px', flex: 1, ...STATUS_STYLE[operationalStatus] }}
       data-status={operationalStatus}
     >
       <span

@@ -45,7 +45,7 @@ cd frontend && npm run test:e2e
 
 ## 4. Your workflow for a new feature
 
-
+```
 /orchestrate <feature description>   ← writes failing tests, confirms red
 /frontend <task>                     ← implements to pass the tests
 /qa <task>                           ← adds Playwright e2e coverage

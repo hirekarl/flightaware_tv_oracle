@@ -14,7 +14,7 @@ const SEVERITY_ORDER: Record<OperationalStatus, number> = {
  * a pure frontend transform — no backend or data contract changes required.
  * FlightState.operationalStatus is already provided by the SSE stream.
  */
-export function sortFlightsBySeverity(flights: FlightState[]): FlightState[] {
+export function sortFlightsBySeverity<T extends FlightState>(flights: T[]): T[] {
   return [...flights].sort(
     (a, b) => SEVERITY_ORDER[a.operationalStatus] - SEVERITY_ORDER[b.operationalStatus]
   );

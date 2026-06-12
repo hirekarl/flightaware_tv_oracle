@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import MockFlightBoard from './MockFlightBoard';
 import { mockFlights } from '../fixtures/mockFlights';
+import { sortFlightsBySeverity } from '../utils/sortFlights';
 
 type Tab = 'map' | 'flights';
 
@@ -65,7 +66,7 @@ function FlightsPanel() {
     >
       <Header />
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <MockFlightBoard flights={mockFlights} />
+        <MockFlightBoard flights={sortFlightsBySeverity(mockFlights)} />
       </div>
     </div>
   );
@@ -107,13 +108,19 @@ function Header() {
           alignItems: 'center',
           gap: '8px',
           color: 'var(--fa-blue)',
-          fontWeight: 700,
-          fontSize: '1rem',
-          letterSpacing: '0.04em',
         }}
       >
         <span aria-hidden="true">✈</span>
-        <span>FlightAware</span>
+        <h1
+          style={{
+            margin: 0,
+            fontSize: '1rem',
+            fontWeight: 700,
+            letterSpacing: '0.04em',
+          }}
+        >
+          FlightAware TV
+        </h1>
       </div>
       <div style={{ textAlign: 'right', color: '#fff', fontSize: '0.8rem' }}>
         <div style={{ color: 'var(--fa-blue)', fontWeight: 600 }}>{dateStr}</div>
@@ -124,8 +131,17 @@ function Header() {
 }
 
 export default function AppLayout() {
-  const isMobile = useState(() => window.matchMedia('(max-width: 1023px)').matches)[0];
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia('(max-width: 1023px)').matches
+  );
   const [activeTab, setActiveTab] = useState<Tab>('map');
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 1023px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   if (!isMobile) {
     return (
