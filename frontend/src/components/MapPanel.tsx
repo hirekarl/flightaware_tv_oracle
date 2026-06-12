@@ -26,6 +26,8 @@ function isInternational(ac: JFKAircraft): boolean {
 function statusColor(ac: JFKAircraft): string {
   if (isInternational(ac)) return '#00CFFF';
   switch (ac.status) {
+    case 'Taxiing':
+      return '#FFFFFF';
     case 'On Approach':
       return '#39FF14';
     case 'On Time':
@@ -81,10 +83,16 @@ export default function MapPanel() {
     try {
       map = L.map('jfk-map', {
         center: [40.6413, -73.7781],
-        zoom: 9,
-        minZoom: 7,
-        maxZoom: 13,
+        zoom: 13,
+        minZoom: 13,
+        maxZoom: 16,
         scrollWheelZoom: false,
+        dragging: false,
+        zoomControl: false,
+        doubleClickZoom: false,
+        touchZoom: false,
+        keyboard: false,
+        boxZoom: false,
       });
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -134,7 +142,7 @@ export default function MapPanel() {
         });
         return next;
       });
-    }, 30000);
+    }, 10000);
 
     return () => clearInterval(intervalId);
   }, []);
