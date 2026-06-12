@@ -38,14 +38,4 @@ describe('FlightCard', () => {
     render(<FlightCard flight={base} />);
     expect(screen.getByText('AA123')).toBeInTheDocument();
   });
-
-  it('displays the aircraft type', () => {
-    render(<FlightCard flight={base} />);
-    expect(screen.getByText('B737')).toBeInTheDocument();
-  });
-
-  it('displays the destination ICAO', () => {
-    render(<FlightCard flight={base} />);
-    expect(screen.getByText('KIAH')).toBeInTheDocument();
-  });
 });

@@ -6,6 +6,8 @@ interface Props {
   flights: MockFlightEntry[];
 }
 
+const GRID = '2fr 1fr 1fr 1fr';
+
 const headerCell: React.CSSProperties = {
   padding: '6px 12px',
   color: '#8fa8c8',
@@ -14,8 +16,15 @@ const headerCell: React.CSSProperties = {
   textAlign: 'left',
 };
 
+const dataCell: React.CSSProperties = {
+  padding: '6px 12px',
+  fontSize: '0.85rem',
+  color: '#fff',
+  whiteSpace: 'nowrap',
+};
+
 const departCell: React.CSSProperties = {
-  padding: '4px 12px',
+  padding: '6px 12px',
   fontSize: '0.85rem',
   color: '#fff',
   whiteSpace: 'nowrap',
@@ -36,8 +45,8 @@ export default function MockFlightBoard({ flights }: Props) {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: '2fr 1fr 1fr 1fr',
-          borderBottom: '1px solid #1e3a5f',
+          gridTemplateColumns: GRID,
+          borderBottom: '1px solid #2A3E6B',
           paddingBottom: '4px',
         }}
       >
@@ -54,26 +63,28 @@ export default function MockFlightBoard({ flights }: Props) {
           fontSize: '0.7rem',
           padding: '6px 12px',
           letterSpacing: '0.06em',
-          borderBottom: '1px solid #1e3a5f',
+          borderBottom: '1px solid #2A3E6B',
           textTransform: 'uppercase',
         }}
       >
         Scheduled Departures
       </div>
 
-      {/* Flight rows — FlightCard renders IDENT + TYPE + DESTINATION */}
+      {/* Flight rows — each column is a separate grid cell */}
       {flights.map((flight, idx) => (
         <div
           key={flight.flightId}
           style={{
-            display: 'flex',
+            display: 'grid',
+            gridTemplateColumns: GRID,
             alignItems: 'center',
-            justifyContent: 'space-between',
             background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.03)',
-            borderBottom: '1px solid rgba(30,58,95,0.5)',
+            borderBottom: '1px solid rgba(42,62,107,0.5)',
           }}
         >
           <FlightCard flight={flight} />
+          <span style={dataCell}>{flight.aircraftType}</span>
+          <span style={dataCell}>{flight.route.destination}</span>
           <span style={departCell}>{flight.departTime}</span>
         </div>
       ))}

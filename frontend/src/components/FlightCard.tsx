@@ -18,20 +18,19 @@ const STATUS_STYLE: Record<OperationalStatus, React.CSSProperties> = {
 };
 
 export default function FlightCard({ flight }: Props) {
-  const { operationalStatus, flightId, aircraftType, route } = flight;
+  const { operationalStatus, flightId } = flight;
 
   return (
     <article
       className={STATUS_CLASS[operationalStatus]}
-      style={{ padding: '6px 12px', flex: 1, ...STATUS_STYLE[operationalStatus] }}
+      style={{ padding: '6px 12px', ...STATUS_STYLE[operationalStatus] }}
       data-status={operationalStatus}
     >
       <span
         style={operationalStatus === 'CRITICAL' ? { fontWeight: 'bold' } : undefined}
       >
         {flightId}
-      </span>{' '}
-      <span>{aircraftType}</span> <span>{route.destination}</span>
+      </span>
     </article>
   );
 }

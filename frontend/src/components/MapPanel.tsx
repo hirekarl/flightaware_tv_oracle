@@ -65,29 +65,11 @@ const FA_STYLE: maplibregl.StyleSpecification = {
   ],
 };
 
-function isInternational(ac: JFKAircraft): boolean {
-  return (
-    ac.altitudeFt > 30000 &&
-    (!ac.origin.startsWith('K') || !ac.destination.startsWith('K'))
-  );
-}
-
 function statusColor(ac: JFKAircraft): string {
-  if (isInternational(ac)) return '#00A0E2';
-  switch (ac.status) {
-    case 'Taxiing':
-      return '#00A0E2';
-    case 'On Approach':
-      return '#05A94B';
-    case 'On Time':
-      return '#00A0E2';
-    case 'Delayed':
-      return '#F5A623';
-    case 'Departed':
-      return '#00A0E2';
-    case 'Landed':
-      return '#2A3E6B';
+  if (ac.status === 'Taxiing' || ac.status === 'Landed') {
+    return '#FFD700'; // aviation yellow — on ground
   }
+  return '#39FF14'; // neon green — airborne
 }
 
 function makeIconHtml(ac: JFKAircraft): string {
