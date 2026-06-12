@@ -1,20 +1,69 @@
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef, useState } from 'react';
 import { JFK_AIRCRAFT } from '../mocks/jfkTelemetry';
 import type { JFKAircraft } from '../mocks/jfkTelemetry';
 
-delete (L.Icon.Default.prototype as unknown as Record<string, unknown>)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
-});
-
 const NUDGE = 0.00015;
+
+// Exact FlightAware color palette applied per vector tile layer
+const FA_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    ofm: {
+      type: 'vector',
+      url: 'https://tiles.openfreemap.org/planet',
+    },
+  },
+  layers: [
+    { id: 'bg', type: 'background', paint: { 'background-color': '#294E8C' } },
+    {
+      id: 'water',
+      type: 'fill',
+      source: 'ofm',
+      'source-layer': 'water',
+      paint: { 'fill-color': '#1A3265' },
+    },
+    {
+      id: 'waterway',
+      type: 'line',
+      source: 'ofm',
+      'source-layer': 'waterway',
+      paint: { 'line-color': '#1A3265', 'line-width': 1 },
+    },
+    {
+      id: 'aeroway-apron',
+      type: 'fill',
+      source: 'ofm',
+      'source-layer': 'aeroway',
+      filter: ['==', ['get', 'class'], 'apron'],
+      paint: { 'fill-color': '#3A3A50' },
+    },
+    {
+      id: 'aeroway-runway',
+      type: 'line',
+      source: 'ofm',
+      'source-layer': 'aeroway',
+      filter: ['==', ['get', 'class'], 'runway'],
+      paint: { 'line-color': '#4A5580', 'line-width': 4 },
+    },
+    {
+      id: 'aeroway-taxiway',
+      type: 'line',
+      source: 'ofm',
+      'source-layer': 'aeroway',
+      filter: ['==', ['get', 'class'], 'taxiway'],
+      paint: { 'line-color': '#4A5580', 'line-width': 1.5 },
+    },
+    {
+      id: 'road',
+      type: 'line',
+      source: 'ofm',
+      'source-layer': 'transportation',
+      paint: { 'line-color': '#2A3E6B', 'line-width': 0.8, 'line-opacity': 0.7 },
+    },
+  ],
+};
 
 function isInternational(ac: JFKAircraft): boolean {
   return (
@@ -41,18 +90,12 @@ function statusColor(ac: JFKAircraft): string {
   }
 }
 
-function makeIcon(ac: JFKAircraft): L.DivIcon {
+function makeIconHtml(ac: JFKAircraft): string {
   const color = statusColor(ac);
-  return L.divIcon({
-    className: '',
-    html: `
-      <div class="aircraft-marker">
-        <div class="aircraft-icon" style="transform:rotate(${ac.heading}deg);color:${color};filter:drop-shadow(0 0 6px ${color});">✈</div>
-        <div class="aircraft-label">${ac.flightId}</div>
-      </div>`,
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-  });
+  return `<div class="aircraft-marker">
+    <div class="aircraft-icon" style="transform:rotate(${ac.heading}deg);color:${color};filter:drop-shadow(0 0 6px ${color});">✈</div>
+    <div class="aircraft-label">${ac.flightId}</div>
+  </div>`;
 }
 
 function tooltipHtml(ac: JFKAircraft): string {
@@ -62,15 +105,17 @@ function tooltipHtml(ac: JFKAircraft): string {
 const MARKER_STYLE = `
 .aircraft-marker{display:flex;flex-direction:column;align-items:center;cursor:pointer;}
 .aircraft-icon{font-size:20px;line-height:1;}
-.aircraft-label{font-size:9px;font-family:monospace;color:#ffffff;margin-top:2px;text-shadow:0 0 3px #000000;white-space:nowrap;}
-.leaflet-tooltip.aircraft-tooltip{background:#0C1929!important;border:1px solid #00A0E2!important;color:#ffffff!important;font-family:monospace!important;font-size:12px!important;padding:8px 12px!important;border-radius:4px!important;white-space:nowrap!important;box-shadow:0 0 12px rgba(0,160,226,0.4)!important;}
-.leaflet-tooltip.aircraft-tooltip::before{border-top-color:#00A0E2!important;}
-.kjfk-label{color:#ffffff;font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;text-shadow:0 0 6px #000,0 0 3px #000;white-space:nowrap;pointer-events:none;}
+.aircraft-label{font-size:9px;font-family:monospace;color:#ffffff;margin-top:2px;text-shadow:0 0 3px rgba(0,0,0,0.8);white-space:nowrap;}
+.kjfk-label{color:#ffffff;font-family:monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;text-shadow:0 0 6px rgba(0,0,0,0.8);white-space:nowrap;pointer-events:none;}
+.aircraft-popup .maplibregl-popup-content{background:#0C1929!important;border:1px solid #00A0E2!important;color:#ffffff!important;font-family:monospace!important;font-size:12px!important;padding:8px 12px!important;border-radius:4px!important;white-space:nowrap!important;box-shadow:0 0 12px rgba(0,160,226,0.4)!important;}
+.aircraft-popup .maplibregl-popup-tip{border-top-color:#00A0E2!important;}
+.maplibregl-popup-close-button{display:none;}
 `;
 
 export default function MapPanel() {
-  const mapRef = useRef<L.Map | null>(null);
-  const markerRefs = useRef<Record<string, L.Marker>>({});
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markerRefs = useRef<Record<string, maplibregl.Marker>>({});
+  const popupRefs = useRef<Record<string, maplibregl.Popup>>({});
   const [positions, setPositions] = useState<Record<string, JFKAircraft>>(() =>
     Object.fromEntries(JFK_AIRCRAFT.map((ac) => [ac.flightId, { ...ac }]))
   );
@@ -80,57 +125,68 @@ export default function MapPanel() {
     const container = document.getElementById('jfk-map');
     if (!container) return;
 
-    let map: L.Map;
+    let map: maplibregl.Map | null = null;
     try {
-      map = L.map('jfk-map', {
-        center: [40.6413, -73.7781],
+      map = new maplibregl.Map({
+        container: 'jfk-map',
+        style: FA_STYLE,
+        center: [-73.7781, 40.6413],
         zoom: 13,
         minZoom: 13,
         maxZoom: 16,
-        scrollWheelZoom: false,
-        dragging: false,
-        zoomControl: false,
-        doubleClickZoom: false,
-        touchZoom: false,
-        keyboard: false,
-        boxZoom: false,
+        interactive: false,
+        attributionControl: false,
       });
 
-      L.tileLayer(
-        'https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',
-        {
-          attribution: '© OpenStreetMap contributors © CARTO',
-          opacity: 0.85,
-        }
-      ).addTo(map);
+      map.on('load', () => {
+        if (!map) return;
+        const liveMap = map;
 
-      const tilePane = map.getPanes().tilePane as HTMLElement;
-      tilePane.style.filter = 'hue-rotate(205deg) saturate(3.5) brightness(0.55)';
+        // KJFK airport label
+        const kjfkEl = document.createElement('div');
+        kjfkEl.className = 'kjfk-label';
+        kjfkEl.textContent = 'KJFK';
+        new maplibregl.Marker({ element: kjfkEl })
+          .setLngLat([-73.7781, 40.6413])
+          .addTo(liveMap);
 
-      const kjfkIcon = L.divIcon({
-        className: '',
-        html: '<div class="kjfk-label">KJFK</div>',
-        iconSize: [60, 20],
-        iconAnchor: [30, 10],
-      });
-      L.marker([40.6413, -73.7781], { icon: kjfkIcon, interactive: false }).addTo(map);
+        JFK_AIRCRAFT.forEach((ac) => {
+          const el = document.createElement('div');
+          el.innerHTML = makeIconHtml(ac);
 
-      JFK_AIRCRAFT.forEach((ac) => {
-        const marker = L.marker([ac.lat, ac.lon], { icon: makeIcon(ac) })
-          .addTo(map)
-          .bindTooltip(tooltipHtml(ac), {
-            permanent: false,
-            direction: 'top',
-            offset: [0, -10],
-            className: 'aircraft-tooltip',
+          const popup = new maplibregl.Popup({
+            closeButton: false,
+            className: 'aircraft-popup',
+            offset: 20,
+          }).setHTML(tooltipHtml(ac));
+
+          popupRefs.current[ac.flightId] = popup;
+
+          el.addEventListener('mouseenter', () => {
+            const m = markerRefs.current[ac.flightId];
+            if (m) popup.addTo(liveMap).setLngLat(m.getLngLat());
           });
-        markerRefs.current[ac.flightId] = marker;
-      });
+          el.addEventListener('mouseleave', () => popup.remove());
 
-      mapRef.current = map;
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat([ac.lon, ac.lat])
+            .addTo(liveMap);
+
+          markerRefs.current[ac.flightId] = marker;
+        });
+
+        mapRef.current = liveMap;
+      });
     } catch {
-      // Leaflet cannot initialize in non-browser environments (e.g. jsdom)
+      // MapLibre GL requires WebGL — not available in jsdom test environments
     }
+
+    return () => {
+      if (map) {
+        map.remove();
+        mapRef.current = null;
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -150,10 +206,13 @@ export default function MapPanel() {
           };
 
           const marker = markerRefs.current[pos.flightId];
+          const popup = popupRefs.current[pos.flightId];
           if (marker) {
-            marker.setLatLng([newLat, newLon]);
-            marker.setIcon(makeIcon(next[pos.flightId]));
-            marker.setTooltipContent(tooltipHtml(next[pos.flightId]));
+            marker.setLngLat([newLon, newLat]);
+            marker.getElement().innerHTML = makeIconHtml(next[pos.flightId]);
+          }
+          if (popup) {
+            popup.setHTML(tooltipHtml(next[pos.flightId]));
           }
         });
         return next;
@@ -163,7 +222,6 @@ export default function MapPanel() {
     return () => clearInterval(intervalId);
   }, []);
 
-  // suppress unused-variable warning — positions drives marker updates via setPositions
   void positions;
 
   return (
