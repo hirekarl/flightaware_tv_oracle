@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+
+:root {
+  --fa-blue: #4a90d9;
+  --fa-navy: #0a1628;
+  --fa-map-bg: #1a2f4a;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  background-color: var(--fa-navy);
+  color: #fff;
+}
