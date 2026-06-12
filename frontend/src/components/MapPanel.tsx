@@ -104,6 +104,26 @@ export default function MapPanel() {
         }
       ).addTo(map);
 
+      const tilePane = map.getPanes().tilePane as HTMLElement;
+      tilePane.style.filter =
+        'sepia(1) hue-rotate(140deg) saturate(2) brightness(0.75)';
+
+      L.polygon(
+        [
+          [40.653, -73.8],
+          [40.652, -73.785],
+          [40.651, -73.763],
+          [40.644, -73.75],
+          [40.629, -73.752],
+          [40.619, -73.762],
+          [40.615, -73.778],
+          [40.617, -73.795],
+          [40.623, -73.803],
+          [40.636, -73.804],
+        ] as [number, number][],
+        { color: '#4A90D9', weight: 2, fill: false, opacity: 0.85 }
+      ).addTo(map);
+
       const kjfkIcon = L.divIcon({
         className: '',
         html: '<div class="kjfk-label">KJFK</div>',
@@ -155,7 +175,7 @@ export default function MapPanel() {
         });
         return next;
       });
-    }, 10000);
+    }, 30000);
 
     return () => clearInterval(intervalId);
   }, []);
@@ -168,7 +188,7 @@ export default function MapPanel() {
       <style>{MARKER_STYLE}</style>
       <div
         id="jfk-map"
-        style={{ width: '100%', height: '100%', background: '#0a1628' }}
+        style={{ width: '100%', height: '100%', background: '#0d1f1e' }}
       />
     </div>
   );
