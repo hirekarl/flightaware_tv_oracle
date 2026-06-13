@@ -1,9 +1,9 @@
 @import 'tailwindcss';
 
 :root {
-  --fa-blue: #4a90d9;
-  --fa-navy: #0a1628;
-  --fa-map-bg: #1a2f4a;
+  --fa-blue: #00a0e2;
+  --fa-navy: #0c1929;
+  --fa-map-bg: #062340;
 }
 
 html,

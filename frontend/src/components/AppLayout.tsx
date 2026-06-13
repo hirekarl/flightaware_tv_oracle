@@ -1,56 +1,10 @@
 import { useState, useEffect } from 'react';
 import MockFlightBoard from './MockFlightBoard';
+import MapPanel from './MapPanel';
 import { mockFlights } from '../fixtures/mockFlights';
 import { sortFlightsBySeverity } from '../utils/sortFlights';
 
 type Tab = 'map' | 'flights';
-
-function MapPanel() {
-  return (
-    <div
-      data-testid="map-panel"
-      style={{
-        flex: 1,
-        background: 'var(--fa-map-bg)',
-        position: 'relative',
-        overflow: 'hidden',
-        minHeight: '100%',
-      }}
-    >
-      {/* Static SVG aircraft scattered at approximate US positions */}
-      <svg
-        viewBox="0 0 100 60"
-        style={{ width: '100%', height: '100%', position: 'absolute', inset: 0 }}
-        aria-hidden="true"
-      >
-        <text x="22" y="18" fontSize="3" fill="#00e676" transform="rotate(-45,22,18)">
-          ✈
-        </text>
-        <text x="35" y="28" fontSize="3" fill="#4dd0e1" transform="rotate(30,35,28)">
-          ✈
-        </text>
-        <text x="55" y="15" fontSize="3" fill="#00e676" transform="rotate(-20,55,15)">
-          ✈
-        </text>
-        <text x="48" y="35" fontSize="3" fill="#00e676" transform="rotate(10,48,35)">
-          ✈
-        </text>
-        <text x="70" y="22" fontSize="3" fill="#4dd0e1" transform="rotate(-35,70,22)">
-          ✈
-        </text>
-        <text x="62" y="42" fontSize="3" fill="#ff5252" transform="rotate(15,62,42)">
-          ✈
-        </text>
-        <text x="30" y="45" fontSize="3" fill="#00e676" transform="rotate(-10,30,45)">
-          ✈
-        </text>
-        <text x="80" y="38" fontSize="3" fill="#4dd0e1" transform="rotate(-50,80,38)">
-          ✈
-        </text>
-      </svg>
-    </div>
-  );
-}
 
 function FlightsPanel() {
   return (
@@ -98,7 +52,7 @@ function Header() {
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: '10px 16px',
-        borderBottom: '1px solid #1e3a5f',
+        borderBottom: '1px solid #2A3E6B',
         flexShrink: 0,
       }}
     >
@@ -153,7 +107,7 @@ export default function AppLayout() {
           overflow: 'hidden',
         }}
       >
-        <div style={{ flex: '0 0 60%', height: '100%' }}>
+        <div style={{ flex: '0 0 60%', height: '100vh' }}>
           <MapPanel />
         </div>
         <div style={{ flex: '0 0 40%', height: '100%', overflowY: 'auto' }}>
@@ -178,7 +132,7 @@ export default function AppLayout() {
         style={{
           display: 'flex',
           background: 'var(--fa-navy)',
-          borderBottom: '1px solid #1e3a5f',
+          borderBottom: '1px solid #2A3E6B',
           flexShrink: 0,
         }}
       >
@@ -192,7 +146,7 @@ export default function AppLayout() {
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
-            color: activeTab === 'map' ? 'var(--fa-blue)' : '#8fa8c8',
+            color: activeTab === 'map' ? 'var(--fa-blue)' : '#2A3E6B',
             borderBottom:
               activeTab === 'map'
                 ? '2px solid var(--fa-blue)'
@@ -213,7 +167,7 @@ export default function AppLayout() {
             background: 'transparent',
             border: 'none',
             cursor: 'pointer',
-            color: activeTab === 'flights' ? 'var(--fa-blue)' : '#8fa8c8',
+            color: activeTab === 'flights' ? 'var(--fa-blue)' : '#2A3E6B',
             borderBottom:
               activeTab === 'flights'
                 ? '2px solid var(--fa-blue)'
@@ -227,7 +181,7 @@ export default function AppLayout() {
       </div>
 
       {/* Tab panels */}
-      <div style={{ flex: 1, overflow: 'hidden' }}>
+      <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100vh - 48px)' }}>
         {activeTab === 'map' ? <MapPanel /> : <FlightsPanel />}
       </div>
     </div>
