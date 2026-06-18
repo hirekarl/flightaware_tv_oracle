@@ -1,9 +1,14 @@
 import React from 'react';
-import type { MockFlightEntry } from '../fixtures/mockFlights';
+import type { FlightState } from '../types/flight';
 import FlightCard from './FlightCard';
 
 interface Props {
-  flights: MockFlightEntry[];
+  flights: FlightState[];
+}
+
+function getDepartTime(flight: FlightState): string {
+  const f = flight as FlightState & { departTime?: string };
+  return f.departTime ?? '—';
 }
 
 const GRID = '2fr 1fr 1fr 1fr';
@@ -85,7 +90,7 @@ export default function MockFlightBoard({ flights }: Props) {
           <FlightCard flight={flight} />
           <span style={dataCell}>{flight.aircraftType}</span>
           <span style={dataCell}>{flight.route.destination}</span>
-          <span style={departCell}>{flight.departTime}</span>
+          <span style={departCell}>{getDepartTime(flight)}</span>
         </div>
       ))}
     </div>

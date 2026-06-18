@@ -1,8 +1,17 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { JFK_AIRCRAFT } from '../mocks/jfkTelemetry';
 import type { JFKAircraft } from '../mocks/jfkTelemetry';
+
+function esc(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 const NUDGE = 0.00015;
 
@@ -76,12 +85,12 @@ function makeIconHtml(ac: JFKAircraft): string {
   const color = statusColor(ac);
   return `<div class="aircraft-marker">
     <div class="aircraft-icon" style="transform:rotate(${ac.heading}deg);color:${color};filter:drop-shadow(0 0 6px ${color});">✈</div>
-    <div class="aircraft-label">${ac.flightId}</div>
+    <div class="aircraft-label">${esc(ac.flightId)}</div>
   </div>`;
 }
 
 function tooltipHtml(ac: JFKAircraft): string {
-  return `<span>${ac.flightId}&nbsp;&nbsp;•&nbsp;&nbsp;${ac.aircraftType}</span><br/>${ac.originCity} → ${ac.destinationCity}<br/>Status: ${ac.status}<br/>ETA: ${ac.eta}<br/>Alt: ${ac.altitudeFt.toLocaleString()}ft&nbsp;&nbsp;•&nbsp;&nbsp;${ac.speedKnots}kts`;
+  return `<span>${esc(ac.flightId)}&nbsp;&nbsp;•&nbsp;&nbsp;${esc(ac.aircraftType)}</span><br/>${esc(ac.originCity)} → ${esc(ac.destinationCity)}<br/>Status: ${esc(ac.status)}<br/>ETA: ${esc(ac.eta)}<br/>Alt: ${ac.altitudeFt.toLocaleString()}ft&nbsp;&nbsp;•&nbsp;&nbsp;${ac.speedKnots}kts`;
 }
 
 const MARKER_STYLE = `
@@ -98,7 +107,7 @@ export default function MapPanel() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRefs = useRef<Record<string, maplibregl.Marker>>({});
   const popupRefs = useRef<Record<string, maplibregl.Popup>>({});
-  const [positions, setPositions] = useState<Record<string, JFKAircraft>>(() =>
+  const positionsRef = useRef<Record<string, JFKAircraft>>(
     Object.fromEntries(JFK_AIRCRAFT.map((ac) => [ac.flightId, { ...ac }]))
   );
 
@@ -173,38 +182,34 @@ export default function MapPanel() {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setPositions((prev) => {
-        const next = { ...prev };
-        Object.values(next).forEach((pos) => {
-          const headingRad = (pos.heading * Math.PI) / 180;
-          const newLat = pos.lat + Math.cos(headingRad) * pos.speedKnots * NUDGE;
-          const newLon = pos.lon + Math.sin(headingRad) * pos.speedKnots * NUDGE;
-          const newHeading = pos.heading + (Math.random() - 0.5) * 3;
-          next[pos.flightId] = {
-            ...pos,
-            lat: newLat,
-            lon: newLon,
-            heading: newHeading,
-          };
+      const positions = positionsRef.current;
+      Object.values(positions).forEach((pos) => {
+        const headingRad = (pos.heading * Math.PI) / 180;
+        const newLat = pos.lat + Math.cos(headingRad) * pos.speedKnots * NUDGE;
+        const newLon = pos.lon + Math.sin(headingRad) * pos.speedKnots * NUDGE;
+        const newHeading = pos.heading + (Math.random() - 0.5) * 3;
+        const updated: JFKAircraft = {
+          ...pos,
+          lat: newLat,
+          lon: newLon,
+          heading: newHeading,
+        };
+        positions[pos.flightId] = updated;
 
-          const marker = markerRefs.current[pos.flightId];
-          const popup = popupRefs.current[pos.flightId];
-          if (marker) {
-            marker.setLngLat([newLon, newLat]);
-            marker.getElement().innerHTML = makeIconHtml(next[pos.flightId]);
-          }
-          if (popup) {
-            popup.setHTML(tooltipHtml(next[pos.flightId]));
-          }
-        });
-        return next;
+        const marker = markerRefs.current[pos.flightId];
+        const popup = popupRefs.current[pos.flightId];
+        if (marker) {
+          marker.setLngLat([newLon, newLat]);
+          marker.getElement().innerHTML = makeIconHtml(updated);
+        }
+        if (popup) {
+          popup.setHTML(tooltipHtml(updated));
+        }
       });
     }, 30000);
 
     return () => clearInterval(intervalId);
   }, []);
-
-  void positions;
 
   return (
     <div data-testid="map-panel" style={{ width: '100%', height: '100%' }}>
