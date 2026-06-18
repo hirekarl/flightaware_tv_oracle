@@ -1,12 +1,34 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import MockFlightBoard from './MockFlightBoard';
 import MapPanel from './MapPanel';
-import { mockFlights } from '../fixtures/mockFlights';
 import { sortFlightsBySeverity } from '../utils/sortFlights';
+import { useFleetStream } from '../hooks/useFleetStream';
+
+const API_URL =
+  (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
 
 type Tab = 'map' | 'flights';
 
 function FlightsPanel() {
+  const { flights, loading } = useFleetStream(`${API_URL}/api/fleet/stream`);
+
+  let content: React.ReactNode;
+  if (loading) {
+    content = (
+      <p style={{ color: '#8fa8c8', padding: '24px', textAlign: 'center' }}>
+        Connecting to live feed…
+      </p>
+    );
+  } else if (flights.length === 0) {
+    content = (
+      <p style={{ color: '#8fa8c8', padding: '24px', textAlign: 'center' }}>
+        No active disruptions
+      </p>
+    );
+  } else {
+    content = <MockFlightBoard flights={sortFlightsBySeverity(flights)} />;
+  }
+
   return (
     <div
       data-testid="flights-panel"
@@ -19,9 +41,7 @@ function FlightsPanel() {
       }}
     >
       <Header />
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        <MockFlightBoard flights={sortFlightsBySeverity(mockFlights)} />
-      </div>
+      <div style={{ flex: 1, overflowY: 'auto' }}>{content}</div>
     </div>
   );
 }
