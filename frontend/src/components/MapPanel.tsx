@@ -3,6 +3,11 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { useEffect, useRef } from 'react';
 import { JFK_AIRCRAFT } from '../mocks/jfkTelemetry';
 import type { JFKAircraft } from '../mocks/jfkTelemetry';
+import type { FlightState } from '../types/flight';
+
+interface Props {
+  flights?: FlightState[];
+}
 
 function esc(s: string): string {
   return s
@@ -74,23 +79,39 @@ const FA_STYLE: maplibregl.StyleSpecification = {
   ],
 };
 
-function statusColor(ac: JFKAircraft): string {
-  if (ac.status === 'Taxiing' || ac.status === 'Landed') {
-    return '#FFD700'; // aviation yellow — on ground
+function statusColor(ac: JFKAircraft, live?: FlightState): string {
+  if (live) {
+    if (live.operationalStatus === 'CRITICAL') return '#FF3B3B';
+    if (live.operationalStatus === 'WARNING') return '#FFB800';
+    return '#39FF14';
   }
-  return '#39FF14'; // neon green — airborne
+  if (ac.status === 'Taxiing' || ac.status === 'Landed') return '#FFD700';
+  return '#39FF14';
 }
 
-function makeIconHtml(ac: JFKAircraft): string {
-  const color = statusColor(ac);
+function makeIconHtml(ac: JFKAircraft, live?: FlightState): string {
+  const color = statusColor(ac, live);
   return `<div class="aircraft-marker">
     <div class="aircraft-icon" style="transform:rotate(${ac.heading}deg);color:${color};filter:drop-shadow(0 0 6px ${color});">✈</div>
     <div class="aircraft-label">${esc(ac.flightId)}</div>
   </div>`;
 }
 
-function tooltipHtml(ac: JFKAircraft): string {
-  return `<span>${esc(ac.flightId)}&nbsp;&nbsp;•&nbsp;&nbsp;${esc(ac.aircraftType)}</span><br/>${esc(ac.originCity)} → ${esc(ac.destinationCity)}<br/>Status: ${esc(ac.status)}<br/>ETA: ${esc(ac.eta)}<br/>Alt: ${ac.altitudeFt.toLocaleString()}ft&nbsp;&nbsp;•&nbsp;&nbsp;${ac.speedKnots}kts`;
+function tooltipHtml(ac: JFKAircraft, live?: FlightState): string {
+  const statusLine = live
+    ? `${esc(live.operationalStatus)}${live.deviationType !== 'NONE' ? ` · ${esc(live.deviationType.replace(/_/g, ' '))}` : ''}`
+    : esc(ac.status);
+  const aiLine =
+    live && live.aiAnalysis.summaryTitle !== 'None'
+      ? `<br/><span style="color:#00A0E2;font-style:italic">${esc(live.aiAnalysis.summaryTitle)}</span>`
+      : '';
+  return (
+    `<span>${esc(ac.flightId)}&nbsp;&nbsp;•&nbsp;&nbsp;${esc(ac.aircraftType)}</span>` +
+    `<br/>${esc(ac.originCity)} → ${esc(ac.destinationCity)}` +
+    `<br/>Status: ${statusLine}` +
+    `<br/>ETA: ${esc(ac.eta)}&nbsp;&nbsp;•&nbsp;&nbsp;Alt: ${ac.altitudeFt.toLocaleString()}ft` +
+    aiLine
+  );
 }
 
 const MARKER_STYLE = `
@@ -103,13 +124,29 @@ const MARKER_STYLE = `
 .maplibregl-popup-close-button{display:none;}
 `;
 
-export default function MapPanel() {
+export default function MapPanel({ flights = [] }: Props) {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRefs = useRef<Record<string, maplibregl.Marker>>({});
   const popupRefs = useRef<Record<string, maplibregl.Popup>>({});
   const positionsRef = useRef<Record<string, JFKAircraft>>(
     Object.fromEntries(JFK_AIRCRAFT.map((ac) => [ac.flightId, { ...ac }]))
   );
+  // Always holds the latest live fleet keyed by flightId
+  const liveFleetRef = useRef<Map<string, FlightState>>(new Map());
+
+  // Sync live fleet ref and immediately re-color matching markers
+  useEffect(() => {
+    liveFleetRef.current = new Map(flights.map((f) => [f.flightId, f]));
+    Object.values(positionsRef.current).forEach((pos) => {
+      const marker = markerRefs.current[pos.flightId];
+      if (marker) {
+        marker.getElement().innerHTML = makeIconHtml(
+          pos,
+          liveFleetRef.current.get(pos.flightId)
+        );
+      }
+    });
+  }, [flights]);
 
   useEffect(() => {
     if (mapRef.current) return;
@@ -142,20 +179,28 @@ export default function MapPanel() {
           .addTo(liveMap);
 
         JFK_AIRCRAFT.forEach((ac) => {
+          const live = liveFleetRef.current.get(ac.flightId);
           const el = document.createElement('div');
-          el.innerHTML = makeIconHtml(ac);
+          el.innerHTML = makeIconHtml(ac, live);
 
           const popup = new maplibregl.Popup({
             closeButton: false,
             className: 'aircraft-popup',
             offset: 20,
-          }).setHTML(tooltipHtml(ac));
+          }).setHTML(tooltipHtml(ac, live));
 
           popupRefs.current[ac.flightId] = popup;
 
           el.addEventListener('mouseenter', () => {
             const m = markerRefs.current[ac.flightId];
-            if (m) popup.addTo(liveMap).setLngLat(m.getLngLat());
+            const currentPos = positionsRef.current[ac.flightId] ?? ac;
+            const currentLive = liveFleetRef.current.get(ac.flightId);
+            if (m) {
+              popup
+                .setHTML(tooltipHtml(currentPos, currentLive))
+                .addTo(liveMap)
+                .setLngLat(m.getLngLat());
+            }
           });
           el.addEventListener('mouseleave', () => popup.remove());
 
@@ -196,14 +241,15 @@ export default function MapPanel() {
         };
         positions[pos.flightId] = updated;
 
+        const live = liveFleetRef.current.get(pos.flightId);
         const marker = markerRefs.current[pos.flightId];
         const popup = popupRefs.current[pos.flightId];
         if (marker) {
           marker.setLngLat([newLon, newLat]);
-          marker.getElement().innerHTML = makeIconHtml(updated);
+          marker.getElement().innerHTML = makeIconHtml(updated, live);
         }
         if (popup) {
-          popup.setHTML(tooltipHtml(updated));
+          popup.setHTML(tooltipHtml(updated, live));
         }
       });
     }, 30000);

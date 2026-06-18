@@ -3,15 +3,19 @@ import MockFlightBoard from './MockFlightBoard';
 import MapPanel from './MapPanel';
 import { sortFlightsBySeverity } from '../utils/sortFlights';
 import { useFleetStream } from '../hooks/useFleetStream';
+import type { FlightState } from '../types/flight';
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
 
 type Tab = 'map' | 'flights';
 
-function FlightsPanel() {
-  const { flights, loading } = useFleetStream(`${API_URL}/api/fleet/stream`);
+interface FlightsPanelProps {
+  flights: FlightState[];
+  loading: boolean;
+}
 
+function FlightsPanel({ flights, loading }: FlightsPanelProps) {
   let content: React.ReactNode;
   if (loading) {
     content = (
@@ -105,6 +109,7 @@ function Header() {
 }
 
 export default function AppLayout() {
+  const { flights, loading } = useFleetStream(`${API_URL}/api/fleet/stream`);
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia('(max-width: 1023px)').matches
   );
@@ -128,10 +133,10 @@ export default function AppLayout() {
         }}
       >
         <div style={{ flex: '0 0 60%', height: '100vh' }}>
-          <MapPanel />
+          <MapPanel flights={flights} />
         </div>
         <div style={{ flex: '0 0 40%', height: '100%', overflowY: 'auto' }}>
-          <FlightsPanel />
+          <FlightsPanel flights={flights} loading={loading} />
         </div>
       </div>
     );
@@ -202,7 +207,11 @@ export default function AppLayout() {
 
       {/* Tab panels */}
       <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100vh - 48px)' }}>
-        {activeTab === 'map' ? <MapPanel /> : <FlightsPanel />}
+        {activeTab === 'map' ? (
+          <MapPanel flights={flights} />
+        ) : (
+          <FlightsPanel flights={flights} loading={loading} />
+        )}
       </div>
     </div>
   );
