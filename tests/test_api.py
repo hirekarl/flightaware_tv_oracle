@@ -16,8 +16,9 @@ from backend.models.flight import (
     Route,
     Telemetry,
 )
+from backend.simulation import generate_mock_fleet
 
-_MOCK_FLEET_IDS = {"AA123", "UA456", "DL789", "SW202"}
+_MOCK_FLEET_IDS = {f.flightId for f in generate_mock_fleet()}
 
 
 @pytest.fixture()
