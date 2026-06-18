@@ -43,7 +43,7 @@
 
 ### Karl — Backend
 
-- [ ] Derive expected flight IDs in `test_sse_payload_contains_all_flights` from `generate_mock_fleet()` rather than hardcoding `{"AA123", "UA456", "DL789", "SW202"}`
+- [x] Derive expected flight IDs in `test_sse_payload_contains_all_flights` from `generate_mock_fleet()` rather than hardcoding `{"AA123", "UA456", "DL789", "SW202"}`
 
 ### Ahsan — Frontend
 
