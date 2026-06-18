@@ -412,3 +412,4 @@ test-results/
 backend/.venv/
 .env.example.local
 frontend/.tsbuild/
+frontend/.netlify/
