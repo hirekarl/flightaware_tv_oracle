@@ -3,6 +3,11 @@
     "commit": "",
     "pr": ""
   },
+  "permissions": {
+    "ask": [
+      "Bash(gh pr merge * --admin)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
