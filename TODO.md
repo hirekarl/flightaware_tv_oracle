@@ -72,7 +72,7 @@
 
 ### Shared / Infra
 
-- [ ] Performance baseline — measure and document SSE throughput under simulated load
+- [x] Performance baseline — `scripts/perf_baseline.py` measures enrichment latency + concurrent connection behaviour (mock coordinator: ~4ms/cycle, 277µs TTFE, 1600 enrichments/s at 10 connections; real-world adds Gemini round-trip)
 
 ---
 
@@ -95,6 +95,7 @@ Nothing outstanding for Sprint 3.
 ## Icebox
 
 - [ ] Real-world telemetry adapter (AeroAPI requires paid access; OpenSky Network is a free alternative)
+- [x] `lru-cache` version audit — `5.1.1` (@babel/helper-compilation-targets) and `11.5.1` (jsdom nested) coexist cleanly via npm deduplication; neither enters the browser bundle; no action needed
 - [ ] Multi-tenant support (dispatchers scoped to their own airline fleet)
 - [ ] Mobile-responsive layout pass
 - [ ] `lru-cache` version audit — lock file downgrades from 11.5.1 → 5.1.1 via MapLibre transitive dep; assess if this causes issues
