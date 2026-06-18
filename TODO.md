@@ -83,7 +83,7 @@
 
 ### Backend
 
-- [ ] Real-world telemetry adapter (swap mock data for AeroAPI or similar)
+Nothing outstanding for Sprint 3.
 
 ### Frontend
 
@@ -94,7 +94,7 @@
 
 ## Icebox
 
-- [ ] Real AeroAPI integration (requires paid API access)
+- [ ] Real-world telemetry adapter (AeroAPI requires paid access; OpenSky Network is a free alternative)
 - [ ] Multi-tenant support (dispatchers scoped to their own airline fleet)
 - [ ] Mobile-responsive layout pass
 - [ ] `lru-cache` version audit — lock file downgrades from 11.5.1 → 5.1.1 via MapLibre transitive dep; assess if this causes issues
