@@ -4,6 +4,7 @@ import FlightCard from './FlightCard';
 
 interface Props {
   flights: FlightState[];
+  onFlightClick?: (flight: FlightState) => void;
 }
 
 function getDepartTime(flight: FlightState): string {
@@ -35,7 +36,7 @@ const departCell: React.CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-export default function MockFlightBoard({ flights }: Props) {
+export default function MockFlightBoard({ flights, onFlightClick }: Props) {
   if (flights.length === 0) {
     return (
       <p style={{ color: '#8fa8c8', padding: '24px', textAlign: 'center' }}>
@@ -79,12 +80,17 @@ export default function MockFlightBoard({ flights }: Props) {
       {flights.map((flight, idx) => (
         <div
           key={flight.flightId}
+          role="button"
+          tabIndex={0}
+          onClick={() => onFlightClick?.(flight)}
+          onKeyDown={(e) => e.key === 'Enter' && onFlightClick?.(flight)}
           style={{
             display: 'grid',
             gridTemplateColumns: GRID,
             alignItems: 'center',
             background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.03)',
             borderBottom: '1px solid rgba(42,62,107,0.5)',
+            cursor: onFlightClick ? 'pointer' : undefined,
           }}
         >
           <FlightCard flight={flight} />

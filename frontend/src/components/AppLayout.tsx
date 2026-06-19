@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import MockFlightBoard from './MockFlightBoard';
 import MapPanel from './MapPanel';
+import AiImpactDrawer from './AiImpactDrawer';
 import { sortFlightsBySeverity } from '../utils/sortFlights';
 import { useFleetStream } from '../hooks/useFleetStream';
 import type { FlightState } from '../types/flight';
@@ -16,6 +17,8 @@ interface FlightsPanelProps {
 }
 
 function FlightsPanel({ flights, loading }: FlightsPanelProps) {
+  const [selectedFlight, setSelectedFlight] = useState<FlightState | null>(null);
+
   let content: React.ReactNode;
   if (loading) {
     content = (
@@ -30,7 +33,12 @@ function FlightsPanel({ flights, loading }: FlightsPanelProps) {
       </p>
     );
   } else {
-    content = <MockFlightBoard flights={sortFlightsBySeverity(flights)} />;
+    content = (
+      <MockFlightBoard
+        flights={sortFlightsBySeverity(flights)}
+        onFlightClick={setSelectedFlight}
+      />
+    );
   }
 
   return (
@@ -46,6 +54,7 @@ function FlightsPanel({ flights, loading }: FlightsPanelProps) {
     >
       <Header />
       <div style={{ flex: 1, overflowY: 'auto' }}>{content}</div>
+      <AiImpactDrawer flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
     </div>
   );
 }

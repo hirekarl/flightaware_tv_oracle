@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import MockFlightBoard from './MockFlightBoard';
 import { mockFlights } from '../fixtures/mockFlights';
 
@@ -43,5 +44,13 @@ describe('MockFlightBoard', () => {
   it('renders an empty-state message when passed an empty array', () => {
     render(<MockFlightBoard flights={[]} />);
     expect(screen.getByText(/no flights/i)).toBeInTheDocument();
+  });
+
+  it('calls onFlightClick with the clicked flight', async () => {
+    const onFlightClick = vi.fn();
+    const user = userEvent.setup();
+    render(<MockFlightBoard flights={mockFlights} onFlightClick={onFlightClick} />);
+    await user.click(screen.getByText(mockFlights[0].flightId));
+    expect(onFlightClick).toHaveBeenCalledWith(mockFlights[0]);
   });
 });
