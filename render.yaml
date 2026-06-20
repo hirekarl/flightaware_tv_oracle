@@ -41,9 +41,8 @@ services:
   - name: flightaware-tv-oracle
     type: web
     runtime: static
-    rootDir: frontend
-    buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
     envVars:
       - key: VITE_API_URL
         value: https://flightaware-tv-oracle-api.onrender.com
