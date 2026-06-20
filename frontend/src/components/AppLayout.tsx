@@ -1,12 +1,53 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import MockFlightBoard from './MockFlightBoard';
 import MapPanel from './MapPanel';
-import { mockFlights } from '../fixtures/mockFlights';
+import AiImpactDrawer from './AiImpactDrawer';
 import { sortFlightsBySeverity } from '../utils/sortFlights';
+import { useFleetStream } from '../hooks/useFleetStream';
+import type { FlightState } from '../types/flight';
+
+const API_URL =
+  (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
 
 type Tab = 'map' | 'flights';
 
-function FlightsPanel() {
+interface FlightsPanelProps {
+  flights: FlightState[];
+  loading: boolean;
+  error: boolean;
+}
+
+function FlightsPanel({ flights, loading, error }: FlightsPanelProps) {
+  const [selectedFlight, setSelectedFlight] = useState<FlightState | null>(null);
+
+  let content: React.ReactNode;
+  if (loading) {
+    content = (
+      <p style={{ color: '#8fa8c8', padding: '24px', textAlign: 'center' }}>
+        Connecting to live feed…
+      </p>
+    );
+  } else if (error) {
+    content = (
+      <p style={{ color: '#D0021B', padding: '24px', textAlign: 'center' }}>
+        Feed disconnected — contact operations
+      </p>
+    );
+  } else if (flights.length === 0) {
+    content = (
+      <p style={{ color: '#8fa8c8', padding: '24px', textAlign: 'center' }}>
+        No active disruptions
+      </p>
+    );
+  } else {
+    content = (
+      <MockFlightBoard
+        flights={sortFlightsBySeverity(flights)}
+        onFlightClick={setSelectedFlight}
+      />
+    );
+  }
+
   return (
     <div
       data-testid="flights-panel"
@@ -19,9 +60,8 @@ function FlightsPanel() {
       }}
     >
       <Header />
-      <div style={{ flex: 1, overflowY: 'auto' }}>
-        <MockFlightBoard flights={sortFlightsBySeverity(mockFlights)} />
-      </div>
+      <div style={{ flex: 1, overflowY: 'auto' }}>{content}</div>
+      <AiImpactDrawer flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
     </div>
   );
 }
@@ -85,6 +125,7 @@ function Header() {
 }
 
 export default function AppLayout() {
+  const { flights, loading, error } = useFleetStream(`${API_URL}/api/fleet/stream`);
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia('(max-width: 1023px)').matches
   );
@@ -108,10 +149,10 @@ export default function AppLayout() {
         }}
       >
         <div style={{ flex: '0 0 60%', height: '100vh' }}>
-          <MapPanel />
+          <MapPanel flights={flights} />
         </div>
         <div style={{ flex: '0 0 40%', height: '100%', overflowY: 'auto' }}>
-          <FlightsPanel />
+          <FlightsPanel flights={flights} loading={loading} error={error} />
         </div>
       </div>
     );
@@ -182,7 +223,11 @@ export default function AppLayout() {
 
       {/* Tab panels */}
       <div style={{ flex: 1, overflow: 'hidden', height: 'calc(100vh - 48px)' }}>
-        {activeTab === 'map' ? <MapPanel /> : <FlightsPanel />}
+        {activeTab === 'map' ? (
+          <MapPanel flights={flights} />
+        ) : (
+          <FlightsPanel flights={flights} loading={loading} error={error} />
+        )}
       </div>
     </div>
   );

@@ -1,12 +1,13 @@
 import React from 'react';
-import type { MockFlightEntry } from '../fixtures/mockFlights';
+import type { FlightState } from '../types/flight';
 import FlightCard from './FlightCard';
 
 interface Props {
-  flights: MockFlightEntry[];
+  flights: FlightState[];
+  onFlightClick?: (flight: FlightState) => void;
 }
 
-const GRID = '2fr 1fr 1fr 1fr';
+const GRID = '2fr 1fr 1fr';
 
 const headerCell: React.CSSProperties = {
   padding: '6px 12px',
@@ -23,14 +24,7 @@ const dataCell: React.CSSProperties = {
   whiteSpace: 'nowrap',
 };
 
-const departCell: React.CSSProperties = {
-  padding: '6px 12px',
-  fontSize: '0.85rem',
-  color: '#fff',
-  whiteSpace: 'nowrap',
-};
-
-export default function MockFlightBoard({ flights }: Props) {
+export default function MockFlightBoard({ flights, onFlightClick }: Props) {
   if (flights.length === 0) {
     return (
       <p style={{ color: '#8fa8c8', padding: '24px', textAlign: 'center' }}>
@@ -53,7 +47,6 @@ export default function MockFlightBoard({ flights }: Props) {
         <span style={headerCell}>IDENT</span>
         <span style={headerCell}>TYPE</span>
         <span style={headerCell}>TO</span>
-        <span style={headerCell}>DEPART</span>
       </div>
 
       {/* Section label */}
@@ -67,25 +60,29 @@ export default function MockFlightBoard({ flights }: Props) {
           textTransform: 'uppercase',
         }}
       >
-        Scheduled Departures
+        Active Fleet
       </div>
 
       {/* Flight rows — each column is a separate grid cell */}
       {flights.map((flight, idx) => (
         <div
           key={flight.flightId}
+          role="button"
+          tabIndex={0}
+          onClick={() => onFlightClick?.(flight)}
+          onKeyDown={(e) => e.key === 'Enter' && onFlightClick?.(flight)}
           style={{
             display: 'grid',
             gridTemplateColumns: GRID,
             alignItems: 'center',
             background: idx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.03)',
             borderBottom: '1px solid rgba(42,62,107,0.5)',
+            cursor: onFlightClick ? 'pointer' : undefined,
           }}
         >
           <FlightCard flight={flight} />
           <span style={dataCell}>{flight.aircraftType}</span>
           <span style={dataCell}>{flight.route.destination}</span>
-          <span style={departCell}>{flight.departTime}</span>
         </div>
       ))}
     </div>
