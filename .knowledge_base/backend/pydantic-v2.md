@@ -50,7 +50,7 @@ Strict mode is recommended at the SSE boundary to catch malformed payloads early
 ### Field descriptions flow into Instructor prompts
 ```python
 class AiAnalysis(BaseModel):
-    summaryTitle: str = Field(description="One-line title for the dispatcher card.")
+    summaryTitle: str = Field(description="One-line title for the operator card.")
     rootCause: str = Field(description="Single dense sentence identifying the root cause.")
 ```
 These descriptions appear in the JSON schema Instructor sends to Gemini — treat them

@@ -69,7 +69,7 @@
 ### E2e (blocked on PR #42 merge → fresh branch)
 
 - [ ] Configure Playwright to run against a local backend stub for e2e isolation
-- [ ] Write Playwright e2e: dispatcher sees `CRITICAL` flight sorted to top of queue
+- [ ] Write Playwright e2e: FBO operator sees `CRITICAL` flight sorted to top of queue
 - [ ] Write Playwright e2e: clicking a `FlightCard` opens `AiImpactDrawer` with AI fields populated
 
 ---
@@ -98,5 +98,5 @@
 
 - [ ] Real-world telemetry adapter (AeroAPI requires paid access; OpenSky Network is a free alternative)
 - [x] `lru-cache` version audit — `5.1.1` and `11.5.1` coexist cleanly via npm deduplication; neither enters the browser bundle; no action needed
-- [ ] Multi-tenant support (dispatchers scoped to their own airline fleet)
+- [ ] Multi-tenant support (FBO operators scoped to their own facility)
 - [ ] Mobile-responsive layout pass

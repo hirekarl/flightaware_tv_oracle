@@ -25,7 +25,7 @@ def _build_prompt(
         f"altitude {flight.telemetry.altitude} ft.\n\n"
         f"Route analysis: {route_data}\n"
         f"Crew assessment: {crew_data}\n\n"
-        "Return a concise operational brief for the dispatcher. "
+        "Return a concise operational brief for the FBO operator. "
         "summaryTitle should be one line. rootCause, downstreamImpact, and "
         "recommendedAction should each be a single dense sentence."
     )

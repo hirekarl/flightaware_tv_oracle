@@ -26,7 +26,7 @@ Use this for any user-triggered data mutation (e.g., acknowledging a disruption 
 ```tsx
 const [optimisticStatus, setOptimistic] = useOptimistic(flight.operationalStatus);
 ```
-Useful if dispatchers can manually override a flight status before the backend confirms.
+Useful if FBO operators can manually override a flight status before the backend confirms.
 
 **`use(promise)`** — read a promise or context in render (suspends until resolved):
 ```tsx
