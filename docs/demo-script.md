@@ -1,42 +1,35 @@
 # FlightAware TV Oracle — Demo Script
 
 **Runtime:** ~4 minutes
-**Speakers:** Karl (backend / architecture) · Ahsan (frontend / UX)
-**Setup:** Both servers running. Open `http://localhost:5173?demo=true`. Board at Beat 0.
+**Speakers:** Karl (backend / AI) · Ahsan (frontend / UX)
+**Setup:** Both servers running. Open `http://localhost:5173?demo=true`. Board at Beat 1.
 
 Advance **→ Next Beat** 1–2 seconds *before* speaking the corresponding line.
-The SSE stream refreshes within 5 seconds of each advance.
+The board updates within 5 seconds of each advance.
 
 ---
 
-## Act 1 — Problem & Project Context (Karl, ~30s)
+## Act 1 — Problem & Context (Karl, ~30s)
 
-Fixed-base operators run the ground side of aviation: fueling, ramp handling, crew
-services, gate coordination. When a weather system closes a runway or a flight declares
-minimum fuel, an FBO can get five unplanned aircraft on the ramp in under an hour — each
-one needing fuel trucks, ground crew, and gate clearance simultaneously.
+Fixed-base operators handle aviation's ground side: fueling, ramp crews, gate
+coordination. When weather shuts a runway, five unplanned aircraft can arrive on your
+ramp in under an hour.
 
-FlightAware TV is a live flight display product built for airports and lounges — it shows
-you what's in the air. We took that model and rebuilt the backend for FBO operators:
-instead of showing flight status, the system tells you which aircraft are heading your way,
-why, and what they'll need on the ground before they land.
+Business aviation clients pay premium rates for anticipatory service. One missed handoff
+when a $60 million G650 pulls up can cost an FBO $5 million in annual revenue.
 
-Every flight on this board is being analyzed continuously by a multi-agent AI pipeline
-backed by Gemini. The operator sees severity-sorted triage and one-click action briefs —
-not a flat list of status codes.
+Last week we built the display. This week we made it predictive.
 
 ---
 
-## Act 2 — Architecture (Ahsan, ~30s)
+## Act 2 — What We Built This Week (Ahsan, ~30s)
 
-The foundation is a strict data contract: a Pydantic v2 `FlightState` model on the backend
-mirrored as TypeScript strict interfaces on the frontend — no `any`, both sides validated at
-every boundary. When the schema changes, both sides agree before any feature code is written.
+Week 1 was the real-time feed — aircraft status streaming to the board every five
+seconds, severity-sorted automatically.
 
-Transport is SSE — Server-Sent Events. The backend streams a full fleet snapshot every five
-seconds over a persistent HTTP connection. The frontend's `useFleetStream` hook opens that
-connection on mount, validates every payload, and updates the board. If the connection
-drops, the board shows "Feed disconnected" in red.
+This week we added the AI layer: a Gemini-powered multi-agent pipeline that reads route
+and crew data, then surfaces an action card per flight. Not just a problem — what to do
+about it.
 
 ---
 
@@ -44,61 +37,55 @@ drops, the board shows "Feed disconnected" in red.
 
 *Board is at Beat 1.*
 
-**Karl:** Beat zero — normal JFK morning. AA123 is cruising, two background disruptions
-already in progress. The AI is generating analysis on both; click either to see it.
+**Karl:** Normal JFK morning. Twenty aircraft, two disruptions in progress. AI is running
+on every flight. Click either amber card.
 
 *Advance → Beat 2.*
 
-**Ahsan:** AA123 enters a holding pattern over JFK. Fuel is at 110 minutes — amber, but
-manageable. The board sorted it above SW202 automatically. Severity-first ordering is baked
-into the sort utility.
+**Ahsan:** AA123 is now in a holding pattern. A two-hour hold at this fuel level costs
+the FBO $3,000 in ramp time. The board sorted it to the top — highest-stakes aircraft
+first, always.
 
 *Advance → Beat 3.*
 
-**Karl:** AA123 missed the approach — that's a go-around, 85 minutes of fuel at 2,500
-feet. SW202 cleared in the same cycle. The system tracks resolutions in real time alongside
-escalations.
+**Karl:** AA123 missed its approach — go-around at 2,500 feet, 85 minutes of fuel.
+SW202 cleared in the same cycle. The board tracks resolutions alongside escalations.
 
 *Advance → Beat 4.*
 
-**Ahsan:** Two reds. UA456 diverted, AA123 still critical in the go-around. Click AA123.
+**Ahsan:** Two reds. UA456 diverted, AA123 still critical. Click AA123.
 
 *Click to open AiImpactDrawer.*
 
-Four structured fields: situation summary, root cause, downstream impact, and recommended
-action — generated live by Gemini and validated against the data contract before they reach
-the screen. Everything the FBO operator needs to start coordinating ramp resources before
-the aircraft even lands.
+Situation, root cause, downstream impact, recommended action — generated live by Gemini.
+An action brief, not a status code. The line manager knows what to do before the
+aircraft lands.
 
 *Close drawer. Advance → Beat 5.*
 
-**Karl:** AA123 diverts to its alternate. NK501 just went critical in the hold — 38 minutes
-of fuel. The system caught that before the crew called it in. DL789 picks up a hold too.
-The board is showing you the cascade as it develops.
+**Karl:** AA123 diverts. NK501 just went critical — 38 minutes of fuel in the hold.
+The Oracle caught it before the crew called in. That's where FBOs earn or lose a client.
 
-*Advance → Beat 5.*
+*Advance → Beat 6.*
 
-**Ahsan:** AA123 and UA456 landed at their alternates — both back to green on the next SSE
-cycle. NK501 is still critical at 28 minutes. The board tells you exactly where to
-pre-position fuel trucks.
+**Ahsan:** AA123 and UA456 back to green. NK501 still critical at 28 minutes — the board
+tells you where to pre-position fuel trucks and which gate to hold.
 
 ---
 
 ## Act 4 — Challenges & Close (both, ~1 min)
 
-**Karl:** The hardest backend problem was structured LLM output at SSE speed. We run 15
-concurrent Gemini calls per cycle via `asyncio.gather`. We benchmarked at 4 milliseconds
-per cycle excluding LLM latency, with headroom for 10 simultaneous operator connections.
-SSE over WebSockets was a deliberate call: unidirectional, plain HTTP, no reconnection
-protocol, compatible with every CDN without configuration.
+**Karl:** The hardest problem was speed. Fifteen concurrent Gemini calls per cycle, all
+resolving before the board updates — the operator never waits for analysis. The pipeline
+is model-agnostic: swap Gemini for any frontier model and nothing changes.
 
-**Ahsan:** On the frontend, the type guard in `useFleetStream` validates all seven required
-fields on every incoming payload. Malformed output gets discarded before it touches the
-board. The accessibility gate — Lighthouse CI at 95 on every PR — pushed us to make the
-flight board fully keyboard-navigable since the WebGL map can't be made accessible.
+**Ahsan:** The design challenge was density. FBO ops managers read this from across a
+room while coordinating ground crews by radio. The action drawer is one click — always
+available, never in the way.
 
-**Karl:** Swap `generate_mock_fleet()` for a live AeroAPI feed and the pipeline runs
-unchanged. Happy to go deeper on any of the engineering choices.
+**Karl:** A live AeroAPI feed is a one-line swap. The Oracle scales from a single FBO to
+a regional network. Happy to go deeper on the AI pipeline or how we'd take this to
+market.
 
 ---
 
@@ -106,9 +93,9 @@ unchanged. Happy to go deeper on any of the engineering choices.
 
 | Cue | Action |
 |---|---|
-| "opens on a normal JFK morning" | Already at Beat 0 — no advance |
-| "AA123 enters a holding pattern" | Advance → Beat 1 |
-| "AA123 missed the approach" | Advance → Beat 2 |
-| "Two reds. UA456 diverted" | Advance → Beat 3 |
-| "AA123 diverts to its alternate" | Advance → Beat 4 |
-| "AA123 and UA456 landed" | Advance → Beat 5 |
+| "Normal JFK morning" | Already at Beat 1 — no advance |
+| "AA123 is now in a holding pattern" | Advance → Beat 2 |
+| "AA123 missed its approach" | Advance → Beat 3 |
+| "Two reds. UA456 diverted" | Advance → Beat 4 |
+| "AA123 diverts" | Advance → Beat 5 |
+| "AA123 and UA456 back to green" | Advance → Beat 6 |
