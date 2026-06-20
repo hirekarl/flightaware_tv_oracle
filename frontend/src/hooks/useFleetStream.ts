@@ -52,7 +52,14 @@ export function useFleetStream(url: string): FleetStreamState {
     };
 
     source.onerror = () => {
-      setState((prev) => ({ ...prev, loading: false, error: true }));
+      setState((prev) => ({
+        flights: prev.flights,
+        loading: false,
+        // Only raise the error flag when there is no fleet data to display.
+        // If we already received a snapshot, keep showing it — a transient
+        // disconnect should not blank the board for dispatchers.
+        error: prev.flights.length === 0,
+      }));
     };
 
     return () => source.close();
