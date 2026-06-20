@@ -9,6 +9,7 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 import uvicorn
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, StreamingResponse
@@ -18,6 +19,8 @@ from backend import __version__
 from backend.agents.coordinator import CoordinatorAgent
 from backend.models.flight import FlightState
 from backend.simulation import _engine, generate_mock_fleet
+
+load_dotenv()
 
 _cors_origins = [
     o.strip()

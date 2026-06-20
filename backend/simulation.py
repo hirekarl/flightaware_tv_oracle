@@ -54,6 +54,22 @@ HOLD = DeviationType.HOLDING_PATTERN
 GO = DeviationType.GO_AROUND
 DIV = DeviationType.DIVERSION
 
+# Background traffic — always NORMAL, never advance with the scenario beats.
+# IDs match the map background aircraft in frontend/src/mocks/jfkTelemetry.ts
+# so the map and board show the same flights.
+_BACKGROUND: list[FlightState] = [
+    _f("B6101", "A320", "KJFK", "KMIA", N, NONE, 155, 0),
+    _f("AA301", "B738", "KJFK", "KLAX", N, NONE, 190, 0),
+    _f("BA178", "B789", "EGLL", "KJFK", N, NONE, 210, 0),
+    _f("DL402", "B763", "KJFK", "KATL", N, NONE, 175, 0),
+    _f("AA519", "B752", "KJFK", "KSFO", N, NONE, 200, 2500),
+    _f("B6441", "A321", "KJFK", "KLAX", N, NONE, 185, 800),
+    _f("AA412", "B738", "KLAX", "KJFK", N, NONE, 95, 900),
+    _f("DL188", "A321", "KORD", "KJFK", N, NONE, 88, 1800),
+    _f("EK202", "A380", "OMDB", "KJFK", N, NONE, 120, 1100),
+    _f("UA388", "A319", "KDEN", "KJFK", N, NONE, 105, 4000),
+]
+
 
 class ScenarioEngine:
     """Advances a scripted 6-beat demo scenario on demand."""
@@ -130,7 +146,7 @@ class ScenarioEngine:
         return self._BEAT_NAMES[self._beat_index]
 
     def current_beat(self) -> list[FlightState]:
-        return list(self._BEATS[self._beat_index])
+        return list(self._BEATS[self._beat_index]) + list(_BACKGROUND)
 
     def advance(self) -> tuple[int, str]:
         self._beat_index = (self._beat_index + 1) % len(self._BEATS)
