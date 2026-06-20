@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FlightState } from '../types/flight';
 
 interface FleetStreamState {
   flights: FlightState[];
   loading: boolean;
   error: boolean;
+  reconnecting: boolean;
 }
 
 function isFlightState(value: unknown): value is FlightState {
@@ -36,26 +37,77 @@ export function useFleetStream(url: string): FleetStreamState {
     flights: [],
     loading: true,
     error: false,
+    reconnecting: false,
   });
 
+  // Tracks whether we've ever received real data in this mount.
+  // Determines whether an error shows a loading spinner (no data yet)
+  // or a reconnecting banner (data already on screen, keep it visible).
+  const hasData = useRef(false);
+
   useEffect(() => {
-    const source = new EventSource(url);
+    let source: EventSource | null = null;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let cancelled = false;
 
-    source.onmessage = (e: MessageEvent<string>) => {
-      const flights = parseFleetEvent(e.data);
-      // The backend sends full-fleet snapshots every cycle — an empty array
-      // indicates a heartbeat or partial flush, not an intentionally empty fleet.
-      // Only update state when there is real data to avoid clearing the board.
-      if (flights.length > 0) {
-        setState({ flights, loading: false, error: false });
-      }
+    // Derive health URL from the stream URL so we can ping the backend
+    // with a cheap GET request to trigger Render's free-tier spin-up.
+    const healthUrl = url.replace('/api/fleet/stream', '/health');
+
+    const openStream = () => {
+      if (cancelled) return;
+      source = new EventSource(url);
+
+      source.onmessage = (e: MessageEvent<string>) => {
+        const flights = parseFleetEvent(e.data);
+        if (flights.length > 0) {
+          hasData.current = true;
+          setState({ flights, loading: false, error: false, reconnecting: false });
+        }
+      };
+
+      source.onerror = () => {
+        source?.close();
+        source = null;
+        if (cancelled) return;
+        // If we already had data, keep the board visible and show a
+        // reconnecting banner. If not, stay in loading state.
+        setState((prev) => ({
+          ...prev,
+          loading: !hasData.current,
+          error: false,
+          reconnecting: hasData.current,
+        }));
+        startHealthPoll();
+      };
     };
 
-    source.onerror = () => {
-      setState((prev) => ({ ...prev, loading: false, error: true }));
+    const startHealthPoll = () => {
+      // Guard against accumulating multiple intervals if onerror fires again
+      // while a poll is already running.
+      if (pollTimer !== null || cancelled) return;
+      pollTimer = setInterval(() => {
+        fetch(healthUrl)
+          .then((res) => {
+            if (res.ok && !cancelled) {
+              clearInterval(pollTimer!);
+              pollTimer = null;
+              openStream();
+            }
+          })
+          .catch(() => {
+            // backend still sleeping — keep polling
+          });
+      }, 5000);
     };
 
-    return () => source.close();
+    openStream();
+
+    return () => {
+      cancelled = true;
+      source?.close();
+      if (pollTimer !== null) clearInterval(pollTimer);
+    };
   }, [url]);
 
   return state;

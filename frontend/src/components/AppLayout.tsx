@@ -18,9 +18,10 @@ interface FlightsPanelProps {
   flights: FlightState[];
   loading: boolean;
   error: boolean;
+  reconnecting: boolean;
 }
 
-function FlightsPanel({ flights, loading, error }: FlightsPanelProps) {
+function FlightsPanel({ flights, loading, error, reconnecting }: FlightsPanelProps) {
   const [selectedFlight, setSelectedFlight] = useState<FlightState | null>(null);
 
   let content: React.ReactNode;
@@ -63,6 +64,22 @@ function FlightsPanel({ flights, loading, error }: FlightsPanelProps) {
       }}
     >
       <Header />
+      {reconnecting && (
+        <div
+          style={{
+            padding: '5px 12px',
+            background: 'rgba(0,160,226,0.10)',
+            borderBottom: '1px solid rgba(0,160,226,0.25)',
+            color: '#00a0e2',
+            fontSize: '0.72rem',
+            fontFamily: 'monospace',
+            textAlign: 'center',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Waking up backend — reconnecting…
+        </div>
+      )}
       <div style={{ flex: 1, overflowY: 'auto' }}>{content}</div>
       <AiImpactDrawer flight={selectedFlight} onClose={() => setSelectedFlight(null)} />
     </div>
@@ -128,7 +145,9 @@ function Header() {
 }
 
 export default function AppLayout() {
-  const { flights, loading, error } = useFleetStream(`${API_URL}/api/fleet/stream`);
+  const { flights, loading, error, reconnecting } = useFleetStream(
+    `${API_URL}/api/fleet/stream`
+  );
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia('(max-width: 1023px)').matches
   );
@@ -155,7 +174,12 @@ export default function AppLayout() {
           <MapPanel flights={flights} />
         </div>
         <div style={{ flex: '0 0 40%', height: '100%', overflowY: 'auto' }}>
-          <FlightsPanel flights={flights} loading={loading} error={error} />
+          <FlightsPanel
+            flights={flights}
+            loading={loading}
+            error={error}
+            reconnecting={reconnecting}
+          />
         </div>
         {_isDemoMode && <DemoControls />}
       </div>
@@ -230,7 +254,12 @@ export default function AppLayout() {
         {activeTab === 'map' ? (
           <MapPanel flights={flights} />
         ) : (
-          <FlightsPanel flights={flights} loading={loading} error={error} />
+          <FlightsPanel
+            flights={flights}
+            loading={loading}
+            error={error}
+            reconnecting={reconnecting}
+          />
         )}
       </div>
       {_isDemoMode && <DemoControls />}
