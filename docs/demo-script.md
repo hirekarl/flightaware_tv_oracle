@@ -42,24 +42,24 @@ drops, the board shows "Feed disconnected" in red.
 
 ## Act 3 — Live Demo (both, ~2 min)
 
-*Board is at Beat 0.*
+*Board is at Beat 1.*
 
 **Karl:** Beat zero — normal JFK morning. AA123 is cruising, two background disruptions
 already in progress. The AI is generating analysis on both; click either to see it.
 
-*Advance → Beat 1.*
+*Advance → Beat 2.*
 
 **Ahsan:** AA123 enters a holding pattern over JFK. Fuel is at 110 minutes — amber, but
 manageable. The board sorted it above SW202 automatically. Severity-first ordering is baked
 into the sort utility.
 
-*Advance → Beat 2.*
+*Advance → Beat 3.*
 
 **Karl:** AA123 missed the approach — that's a go-around, 85 minutes of fuel at 2,500
 feet. SW202 cleared in the same cycle. The system tracks resolutions in real time alongside
 escalations.
 
-*Advance → Beat 3.*
+*Advance → Beat 4.*
 
 **Ahsan:** Two reds. UA456 diverted, AA123 still critical in the go-around. Click AA123.
 
@@ -70,7 +70,7 @@ action — generated live by Gemini and validated against the data contract befo
 the screen. Everything the FBO operator needs to start coordinating ramp resources before
 the aircraft even lands.
 
-*Close drawer. Advance → Beat 4.*
+*Close drawer. Advance → Beat 5.*
 
 **Karl:** AA123 diverts to its alternate. NK501 just went critical in the hold — 38 minutes
 of fuel. The system caught that before the crew called it in. DL789 picks up a hold too.
