@@ -65,9 +65,10 @@ escalations.
 
 *Click to open AiImpactDrawer.*
 
-Root cause, downstream impact — fuel state, crew needing accommodation, ground services
-required — and a recommended action. Everything the FBO operator needs to start
-coordinating ramp resources before the aircraft even lands.
+Four structured fields: situation summary, root cause, downstream impact, and recommended
+action — generated live by Gemini and validated against the data contract before they reach
+the screen. Everything the FBO operator needs to start coordinating ramp resources before
+the aircraft even lands.
 
 *Close drawer. Advance → Beat 4.*
 
