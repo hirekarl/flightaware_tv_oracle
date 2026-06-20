@@ -188,16 +188,19 @@ async def test_sse_payload_contains_all_flights(first_sse_event: str) -> None:
 # ---------------------------------------------------------------------------
 
 
-async def test_enrich_flight_calls_coordinator_for_all_statuses() -> None:
-    for status in (
-        OperationalStatus.NORMAL,
-        OperationalStatus.WARNING,
-        OperationalStatus.CRITICAL,
-    ):
+async def test_enrich_flight_calls_coordinator_for_warning_and_critical() -> None:
+    for status in (OperationalStatus.WARNING, OperationalStatus.CRITICAL):
         coord = _mock_coordinator()
         flight = _flight(status)
         await _enrich_flight(coord, flight)
         coord.analyze.assert_called_once_with(flight)
+
+
+async def test_enrich_flight_skips_coordinator_for_normal_none() -> None:
+    coord = _mock_coordinator()
+    flight = _flight(OperationalStatus.NORMAL)  # deviationType=NONE by default
+    await _enrich_flight(coord, flight)
+    coord.analyze.assert_not_called()
 
 
 async def test_enriched_flight_carries_ai_analysis() -> None:

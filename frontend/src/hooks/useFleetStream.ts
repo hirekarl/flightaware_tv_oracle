@@ -98,7 +98,7 @@ export function useFleetStream(url: string): FleetStreamState {
           .catch(() => {
             // backend still sleeping — keep polling
           });
-      }, 5000);
+      }, 15000);
     };
 
     openStream();

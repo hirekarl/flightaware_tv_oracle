@@ -135,9 +135,17 @@ async def test_sse_cycle_per_flight_actual_title_matches_coordinator_output(
     mock_coordinator: CoordinatorAgent,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    """actual_title must be whatever coordinator.analyze() returned."""
+    """actual_title must be coordinator output for non-NORMAL+NONE flights.
+
+    NORMAL+NONE flights (background traffic) skip AI and carry their
+    original forecast_title as actual_title instead.
+    """
     records = await _cycle_records(mock_coordinator, caplog)
     for entry in records[0].flights:  # type: ignore[attr-defined]
+        if entry["status"] == "NORMAL" and entry.get("forecast_title") == entry.get(
+            "actual_title"
+        ):
+            continue  # NORMAL+NONE: actual_title intentionally equals forecast_title
         assert entry["actual_title"] == _COORDINATOR_TITLE
 
 

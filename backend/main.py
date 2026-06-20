@@ -17,7 +17,12 @@ from pydantic import BaseModel
 
 from backend import __version__
 from backend.agents.coordinator import CoordinatorAgent
-from backend.models.flight import FlightState
+from backend.models.flight import (
+    AiAnalysis,
+    DeviationType,
+    FlightState,
+    OperationalStatus,
+)
 from backend.simulation import _engine, generate_mock_fleet
 
 load_dotenv()
@@ -93,11 +98,40 @@ async def demo_reset() -> BeatResponse:
     return BeatResponse(beat=_engine.beat_index, name=_engine.beat_name)
 
 
+# Keyed by (flightId, operationalStatus, deviationType). Cleared on restart.
+# NORMAL+NONE flights bypass AI entirely — no key is ever written for them.
+_ai_cache: dict[tuple[str, str, str], AiAnalysis] = {}
+
+
 async def _enrich_flight(
     coordinator: CoordinatorAgent, flight: FlightState
 ) -> tuple[FlightState, dict[str, str]]:
     forecast_title = flight.aiAnalysis.summaryTitle
-    analysis = await coordinator.analyze(flight)
+
+    # Background and recovered flights never need an action brief — skip Gemini.
+    if (
+        flight.operationalStatus == OperationalStatus.NORMAL
+        and flight.deviationType == DeviationType.NONE
+    ):
+        return (
+            flight,
+            {
+                "flight_id": flight.flightId,
+                "status": str(flight.operationalStatus),
+                "forecast_title": forecast_title,
+                "actual_title": forecast_title,
+            },
+        )
+
+    cache_key = (
+        flight.flightId,
+        str(flight.operationalStatus),
+        str(flight.deviationType),
+    )
+    if cache_key not in _ai_cache:
+        _ai_cache[cache_key] = await coordinator.analyze(flight)
+    analysis = _ai_cache[cache_key]
+
     return (
         flight.model_copy(update={"aiAnalysis": analysis}),
         {

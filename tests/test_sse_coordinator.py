@@ -18,7 +18,12 @@ import pytest
 
 from backend.agents.coordinator import CoordinatorAgent
 from backend.main import _sse_fleet_stream
-from backend.models.flight import AiAnalysis, FlightState
+from backend.models.flight import (
+    AiAnalysis,
+    DeviationType,
+    FlightState,
+    OperationalStatus,
+)
 
 _COORDINATOR_ANALYSIS = AiAnalysis(
     summaryTitle="Coordinator-Generated Title",
@@ -58,12 +63,22 @@ async def test_sse_generator_event_has_correct_sse_format(
     assert raw.endswith("\n\n")
 
 
+def _needs_ai(flight_data: dict) -> bool:
+    """NORMAL+NONE flights skip AI — background traffic needs no action brief."""
+    return not (
+        flight_data["operationalStatus"] == OperationalStatus.NORMAL
+        and flight_data["deviationType"] == DeviationType.NONE
+    )
+
+
 async def test_sse_generator_uses_coordinator_analysis_not_static_mock(
     mock_coordinator: CoordinatorAgent,
 ) -> None:
-    """aiAnalysis must come from coordinator.analyze(), not static simulation data."""
+    """Non-NORMAL+NONE flights must carry coordinator.analyze() output."""
     payload = await _first_event(mock_coordinator)
     for flight_data in payload:
+        if not _needs_ai(flight_data):
+            continue
         assert (
             flight_data["aiAnalysis"]["summaryTitle"] == "Coordinator-Generated Title"
         ), (
@@ -76,11 +91,11 @@ async def test_sse_generator_calls_coordinator_once_per_flight(
     mock_coordinator: CoordinatorAgent,
 ) -> None:
     payload = await _first_event(mock_coordinator)
-    expected = len(payload)
+    expected = sum(1 for f in payload if _needs_ai(f))
     actual = mock_coordinator.analyze.call_count  # type: ignore[attr-defined]
     assert actual == expected, (
         f"Expected coordinator.analyze() called {expected} times "
-        f"(once per flight), got {actual}."
+        f"(once per non-NORMAL+NONE flight), got {actual}."
     )
 
 
