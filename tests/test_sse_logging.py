@@ -24,7 +24,7 @@ _AI_ANALYSIS = AiAnalysis(
     recommendedAction="Coordinator action.",
 )
 _LOGGER = "backend.main"
-_MOCK_FLEET_SIZE = 4  # generate_mock_fleet() always returns 4 flights
+_MOCK_FLEET_SIZE = 5  # generate_mock_fleet() returns beat 0 of the scenario (5 flights)
 
 
 @pytest.fixture

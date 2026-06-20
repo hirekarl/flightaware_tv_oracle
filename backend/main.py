@@ -12,11 +12,12 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+from pydantic import BaseModel
 
 from backend import __version__
 from backend.agents.coordinator import CoordinatorAgent
 from backend.models.flight import FlightState
-from backend.simulation import generate_mock_fleet
+from backend.simulation import _engine, generate_mock_fleet
 
 _cors_origins = [
     o.strip()
@@ -27,6 +28,11 @@ _cors_origins = [
 _logger = logging.getLogger(__name__)
 
 _SSE_RETRY_AFTER = 5
+
+
+class BeatResponse(BaseModel):
+    beat: int
+    name: str
 
 
 @asynccontextmanager
@@ -47,7 +53,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
-    allow_methods=["GET"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -62,6 +68,26 @@ async def health() -> dict[str, str]:
 async def get_fleet() -> list[FlightState]:
     """Return a snapshot of the current fleet states."""
     return generate_mock_fleet()
+
+
+@app.get("/demo/status", response_model=BeatResponse)
+async def demo_status() -> BeatResponse:
+    """Return the current demo scenario beat without advancing it."""
+    return BeatResponse(beat=_engine.beat_index, name=_engine.beat_name)
+
+
+@app.post("/demo/next", response_model=BeatResponse)
+async def demo_next() -> BeatResponse:
+    """Advance the demo scenario to the next beat and return the new state."""
+    idx, name = _engine.advance()
+    return BeatResponse(beat=idx, name=name)
+
+
+@app.post("/demo/reset", response_model=BeatResponse)
+async def demo_reset() -> BeatResponse:
+    """Reset the demo scenario to beat 0."""
+    _engine.reset()
+    return BeatResponse(beat=_engine.beat_index, name=_engine.beat_name)
 
 
 async def _enrich_flight(
