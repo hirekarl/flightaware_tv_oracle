@@ -73,6 +73,9 @@ branch = "main"
 upload_to_vcs_release = true
 parse_squash_commits = true
 
+[tool.semantic_release.changelog]
+default_templates.changelog_file = "CHANGELOG.md"
+
 [tool.commitizen]
 name = "cz_conventional_commits"
 changelog_file = "CHANGELOG.md"
