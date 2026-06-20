@@ -11,18 +11,18 @@ The SSE stream refreshes within 5 seconds of each advance.
 
 ## Act 1 — Problem & Project Context (Karl, ~30s)
 
-Airline dispatchers manage 50, sometimes 200 flights simultaneously. When something goes
-wrong — a go-around over JFK, a weather diversion, a crew hitting their duty limit — the
-dispatcher has to figure out what happened, why, who's affected downstream, and what to do,
-all at once, across multiple screens and radio channels.
+Fixed-base operators run the ground side of aviation: fueling, ramp handling, crew
+services, gate coordination. When a weather system closes a runway or a flight declares
+minimum fuel, an FBO can get five unplanned aircraft on the ramp in under an hour — each
+one needing fuel trucks, ground crew, and gate clearance simultaneously.
 
 FlightAware TV is a live flight display product built for airports and lounges — it shows
-you what's in the air. We took that model and rebuilt the backend for dispatchers: instead
-of showing flight status, the system tells you what's going wrong, why, and what to do
-about it.
+you what's in the air. We took that model and rebuilt the backend for FBO operators:
+instead of showing flight status, the system tells you which aircraft are heading your way,
+why, and what they'll need on the ground before they land.
 
 Every flight on this board is being analyzed continuously by a multi-agent AI pipeline
-backed by Gemini. The dispatcher sees severity-sorted triage and one-click action briefs —
+backed by Gemini. The operator sees severity-sorted triage and one-click action briefs —
 not a flat list of status codes.
 
 ---
@@ -65,8 +65,9 @@ escalations.
 
 *Click to open AiImpactDrawer.*
 
-Root cause, downstream impact — crew exposure, connecting passengers — and a recommended
-action. Everything the dispatcher needs without switching screens.
+Root cause, downstream impact — fuel state, crew needing accommodation, ground services
+required — and a recommended action. Everything the FBO operator needs to start
+coordinating ramp resources before the aircraft even lands.
 
 *Close drawer. Advance → Beat 4.*
 
@@ -77,8 +78,8 @@ The board is showing you the cascade as it develops.
 *Advance → Beat 5.*
 
 **Ahsan:** AA123 and UA456 landed at their alternates — both back to green on the next SSE
-cycle. NK501 is still critical at 28 minutes. The board tells you exactly where to look
-next.
+cycle. NK501 is still critical at 28 minutes. The board tells you exactly where to
+pre-position fuel trucks.
 
 ---
 
@@ -86,7 +87,7 @@ next.
 
 **Karl:** The hardest backend problem was structured LLM output at SSE speed. We run 15
 concurrent Gemini calls per cycle via `asyncio.gather`. We benchmarked at 4 milliseconds
-per cycle excluding LLM latency, with headroom for 10 simultaneous dispatcher connections.
+per cycle excluding LLM latency, with headroom for 10 simultaneous operator connections.
 SSE over WebSockets was a deliberate call: unidirectional, plain HTTP, no reconnection
 protocol, compatible with every CDN without configuration.
 
