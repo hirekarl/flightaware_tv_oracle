@@ -12,6 +12,10 @@ class MockEventSource {
   close() {
     this.readyState = MockEventSource.CLOSED;
   }
+  // Push a data string through the mock stream so tests can assert on SSE data paths
+  dispatch(data: string) {
+    this.onmessage?.(new MessageEvent('message', { data }));
+  }
 }
 
 globalThis.EventSource = MockEventSource as unknown as typeof EventSource;

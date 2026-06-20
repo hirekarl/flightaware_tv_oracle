@@ -4,6 +4,7 @@ import type { FlightState } from '../types/flight';
 interface FleetStreamState {
   flights: FlightState[];
   loading: boolean;
+  error: boolean;
 }
 
 function isFlightState(value: unknown): value is FlightState {
@@ -12,7 +13,11 @@ function isFlightState(value: unknown): value is FlightState {
     value !== null &&
     'flightId' in value &&
     'operationalStatus' in value &&
-    'aiAnalysis' in value
+    'aiAnalysis' in value &&
+    'route' in value &&
+    'telemetry' in value &&
+    'deviationType' in value &&
+    'aircraftType' in value
   );
 }
 
@@ -27,18 +32,27 @@ function parseFleetEvent(raw: string): FlightState[] {
 }
 
 export function useFleetStream(url: string): FleetStreamState {
-  const [state, setState] = useState<FleetStreamState>({ flights: [], loading: true });
+  const [state, setState] = useState<FleetStreamState>({
+    flights: [],
+    loading: true,
+    error: false,
+  });
 
   useEffect(() => {
     const source = new EventSource(url);
 
     source.onmessage = (e: MessageEvent<string>) => {
       const flights = parseFleetEvent(e.data);
-      setState({ flights, loading: false });
+      // The backend sends full-fleet snapshots every cycle — an empty array
+      // indicates a heartbeat or partial flush, not an intentionally empty fleet.
+      // Only update state when there is real data to avoid clearing the board.
+      if (flights.length > 0) {
+        setState({ flights, loading: false, error: false });
+      }
     };
 
     source.onerror = () => {
-      setState((prev) => ({ ...prev, loading: false }));
+      setState((prev) => ({ ...prev, loading: false, error: true }));
     };
 
     return () => source.close();

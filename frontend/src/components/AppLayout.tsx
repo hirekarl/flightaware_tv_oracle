@@ -14,9 +14,10 @@ type Tab = 'map' | 'flights';
 interface FlightsPanelProps {
   flights: FlightState[];
   loading: boolean;
+  error: boolean;
 }
 
-function FlightsPanel({ flights, loading }: FlightsPanelProps) {
+function FlightsPanel({ flights, loading, error }: FlightsPanelProps) {
   const [selectedFlight, setSelectedFlight] = useState<FlightState | null>(null);
 
   let content: React.ReactNode;
@@ -24,6 +25,12 @@ function FlightsPanel({ flights, loading }: FlightsPanelProps) {
     content = (
       <p style={{ color: '#8fa8c8', padding: '24px', textAlign: 'center' }}>
         Connecting to live feed…
+      </p>
+    );
+  } else if (error) {
+    content = (
+      <p style={{ color: '#D0021B', padding: '24px', textAlign: 'center' }}>
+        Feed disconnected — contact operations
       </p>
     );
   } else if (flights.length === 0) {
@@ -118,7 +125,7 @@ function Header() {
 }
 
 export default function AppLayout() {
-  const { flights, loading } = useFleetStream(`${API_URL}/api/fleet/stream`);
+  const { flights, loading, error } = useFleetStream(`${API_URL}/api/fleet/stream`);
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia('(max-width: 1023px)').matches
   );
@@ -145,7 +152,7 @@ export default function AppLayout() {
           <MapPanel flights={flights} />
         </div>
         <div style={{ flex: '0 0 40%', height: '100%', overflowY: 'auto' }}>
-          <FlightsPanel flights={flights} loading={loading} />
+          <FlightsPanel flights={flights} loading={loading} error={error} />
         </div>
       </div>
     );
@@ -219,7 +226,7 @@ export default function AppLayout() {
         {activeTab === 'map' ? (
           <MapPanel flights={flights} />
         ) : (
-          <FlightsPanel flights={flights} loading={loading} />
+          <FlightsPanel flights={flights} loading={loading} error={error} />
         )}
       </div>
     </div>

@@ -26,19 +26,12 @@ describe('MockFlightBoard', () => {
     });
   });
 
-  it('renders the departTime for each flight', () => {
-    render(<MockFlightBoard flights={mockFlights} />);
-    mockFlights.forEach((flight) => {
-      expect(screen.getByText(flight.departTime)).toBeInTheDocument();
-    });
-  });
-
-  it('renders column headers: IDENT, TYPE, TO, DEPART', () => {
+  it('renders column headers: IDENT, TYPE, TO', () => {
     render(<MockFlightBoard flights={mockFlights} />);
     expect(screen.getByText('IDENT')).toBeInTheDocument();
     expect(screen.getByText('TYPE')).toBeInTheDocument();
     expect(screen.getByText('TO')).toBeInTheDocument();
-    expect(screen.getByText('DEPART')).toBeInTheDocument();
+    expect(screen.queryByText('DEPART')).not.toBeInTheDocument();
   });
 
   it('renders an empty-state message when passed an empty array', () => {

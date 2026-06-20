@@ -7,12 +7,7 @@ interface Props {
   onFlightClick?: (flight: FlightState) => void;
 }
 
-function getDepartTime(flight: FlightState): string {
-  const f = flight as FlightState & { departTime?: string };
-  return f.departTime ?? '—';
-}
-
-const GRID = '2fr 1fr 1fr 1fr';
+const GRID = '2fr 1fr 1fr';
 
 const headerCell: React.CSSProperties = {
   padding: '6px 12px',
@@ -23,13 +18,6 @@ const headerCell: React.CSSProperties = {
 };
 
 const dataCell: React.CSSProperties = {
-  padding: '6px 12px',
-  fontSize: '0.85rem',
-  color: '#fff',
-  whiteSpace: 'nowrap',
-};
-
-const departCell: React.CSSProperties = {
   padding: '6px 12px',
   fontSize: '0.85rem',
   color: '#fff',
@@ -59,7 +47,6 @@ export default function MockFlightBoard({ flights, onFlightClick }: Props) {
         <span style={headerCell}>IDENT</span>
         <span style={headerCell}>TYPE</span>
         <span style={headerCell}>TO</span>
-        <span style={headerCell}>DEPART</span>
       </div>
 
       {/* Section label */}
@@ -73,7 +60,7 @@ export default function MockFlightBoard({ flights, onFlightClick }: Props) {
           textTransform: 'uppercase',
         }}
       >
-        Scheduled Departures
+        Active Fleet
       </div>
 
       {/* Flight rows — each column is a separate grid cell */}
@@ -96,7 +83,6 @@ export default function MockFlightBoard({ flights, onFlightClick }: Props) {
           <FlightCard flight={flight} />
           <span style={dataCell}>{flight.aircraftType}</span>
           <span style={dataCell}>{flight.route.destination}</span>
-          <span style={departCell}>{getDepartTime(flight)}</span>
         </div>
       ))}
     </div>

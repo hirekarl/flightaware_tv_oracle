@@ -125,6 +125,7 @@ const MARKER_STYLE = `
 `;
 
 export default function MapPanel({ flights = [] }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markerRefs = useRef<Record<string, maplibregl.Marker>>({});
   const popupRefs = useRef<Record<string, maplibregl.Popup>>({});
@@ -150,13 +151,13 @@ export default function MapPanel({ flights = [] }: Props) {
 
   useEffect(() => {
     if (mapRef.current) return;
-    const container = document.getElementById('jfk-map');
+    const container = containerRef.current;
     if (!container) return;
 
     let map: maplibregl.Map | null = null;
     try {
       map = new maplibregl.Map({
-        container: 'jfk-map',
+        container,
         style: FA_STYLE,
         center: [-73.7781, 40.6413],
         zoom: 13,
@@ -261,7 +262,7 @@ export default function MapPanel({ flights = [] }: Props) {
     <div data-testid="map-panel" style={{ width: '100%', height: '100%' }}>
       <style>{MARKER_STYLE}</style>
       <div
-        id="jfk-map"
+        ref={containerRef}
         style={{ width: '100%', height: '100%', background: '#062340' }}
       />
     </div>
