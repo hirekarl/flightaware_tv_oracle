@@ -1,6 +1,12 @@
-"""Mock fleet data generator for development and local testing."""
+"""Demo scenario engine for FlightAware TV.
 
-import random
+Defines a 6-beat JFK weather/ATC crisis that a presenter can advance manually
+via POST /demo/next. generate_mock_fleet() delegates to the module-level
+ScenarioEngine singleton so all existing call sites (main.py, tests) remain
+unchanged.
+"""
+
+from typing import ClassVar
 
 from backend.models.flight import (
     AiAnalysis,
@@ -11,68 +17,148 @@ from backend.models.flight import (
     Telemetry,
 )
 
-_MOCK_FLEET: list[FlightState] = [
-    FlightState(
-        flightId="AA123",
-        aircraftType="B738",
-        route=Route(departure="KJFK", destination="KORD"),
-        operationalStatus=OperationalStatus.CRITICAL,
-        deviationType=DeviationType.GO_AROUND,
-        telemetry=Telemetry(fuelRemainingMin=45, altitude=2400),
-        aiAnalysis=AiAnalysis(
-            summaryTitle="JFK Runway 22L Aborted Landing",
-            rootCause="Windshear alert triggered at decision height.",
-            downstreamImpact="Crew timeout risk. Fuel reserves critical in 25 min.",
-            recommendedAction="Divert to KMKE (Milwaukee); gate K4 is open.",
-        ),
-    ),
-    FlightState(
-        flightId="UA456",
-        aircraftType="A320",
-        route=Route(departure="KLAX", destination="KSFO"),
-        operationalStatus=OperationalStatus.WARNING,
-        deviationType=DeviationType.HOLDING_PATTERN,
-        telemetry=Telemetry(fuelRemainingMin=90, altitude=8000),
-        aiAnalysis=AiAnalysis(
-            summaryTitle="SFO Ground Delay — Fog Closure",
-            rootCause="Runway 28R ILS approaches suspended; visibility below minimums.",
-            downstreamImpact="3 connections at risk. Gate conflict in 40 min.",
-            recommendedAction="Hold 20 min; re-evaluate approach clearance window.",
-        ),
-    ),
-    FlightState(
-        flightId="DL789",
-        aircraftType="B737",
-        route=Route(departure="KATL", destination="KMIA"),
-        operationalStatus=OperationalStatus.NORMAL,
-        deviationType=DeviationType.NONE,
-        telemetry=Telemetry(fuelRemainingMin=180, altitude=35000),
-        aiAnalysis=AiAnalysis(
-            summaryTitle="ATL→MIA — On Schedule",
-            rootCause="No deviations detected.",
-            downstreamImpact="No downstream disruption.",
-            recommendedAction="Continue as filed.",
-        ),
-    ),
-    FlightState(
-        flightId="SW202",
-        aircraftType="B737",
-        route=Route(departure="KDEN", destination="KLAS"),
-        operationalStatus=OperationalStatus.WARNING,
-        deviationType=DeviationType.DIVERSION,
-        telemetry=Telemetry(fuelRemainingMin=60, altitude=12000),
-        aiAnalysis=AiAnalysis(
-            summaryTitle="DEN→LAS — Weather Diversion",
-            rootCause="SIGMET Z4 — severe turbulence along filed route.",
-            downstreamImpact="2 crew approaching duty limit. Gate reassignment needed.",
-            recommendedAction="Divert via KPHX; coordinate gate C12 with ground ops.",
-        ),
-    ),
+_PENDING = AiAnalysis(
+    summaryTitle="Pending AI analysis",
+    rootCause="—",
+    downstreamImpact="—",
+    recommendedAction="—",
+)
+
+
+def _f(
+    flight_id: str,
+    aircraft_type: str,
+    departure: str,
+    destination: str,
+    status: OperationalStatus,
+    deviation: DeviationType,
+    fuel: int,
+    altitude: int,
+) -> FlightState:
+    return FlightState(
+        flightId=flight_id,
+        aircraftType=aircraft_type,
+        route=Route(departure=departure, destination=destination),
+        operationalStatus=status,
+        deviationType=deviation,
+        telemetry=Telemetry(fuelRemainingMin=fuel, altitude=altitude),
+        aiAnalysis=_PENDING,
+    )
+
+
+N = OperationalStatus.NORMAL
+W = OperationalStatus.WARNING
+C = OperationalStatus.CRITICAL
+NONE = DeviationType.NONE
+HOLD = DeviationType.HOLDING_PATTERN
+GO = DeviationType.GO_AROUND
+DIV = DeviationType.DIVERSION
+
+# Background traffic — always NORMAL, never advance with the scenario beats.
+# IDs match the map background aircraft in frontend/src/mocks/jfkTelemetry.ts
+# so the map and board show the same flights.
+_BACKGROUND: list[FlightState] = [
+    _f("B6101", "A320", "KJFK", "KMIA", N, NONE, 155, 0),
+    _f("AA301", "B738", "KJFK", "KLAX", N, NONE, 190, 0),
+    _f("BA178", "B789", "EGLL", "KJFK", N, NONE, 210, 0),
+    _f("DL402", "B763", "KJFK", "KATL", N, NONE, 175, 0),
+    _f("AA519", "B752", "KJFK", "KSFO", N, NONE, 200, 2500),
+    _f("B6441", "A321", "KJFK", "KLAX", N, NONE, 185, 800),
+    _f("AA412", "B738", "KLAX", "KJFK", N, NONE, 95, 900),
+    _f("DL188", "A321", "KORD", "KJFK", N, NONE, 88, 1800),
+    _f("EK202", "A380", "OMDB", "KJFK", N, NONE, 120, 1100),
+    _f("UA388", "A319", "KDEN", "KJFK", N, NONE, 105, 4000),
 ]
 
 
+class ScenarioEngine:
+    """Advances a scripted 6-beat demo scenario on demand."""
+
+    _BEAT_NAMES: ClassVar[list[str]] = [
+        "Normal Ops — Background Disruptions",
+        "AA123 Enters Hold — JFK Weather",
+        "AA123 Misses Approach — SW202 Clears",
+        "UA456 Diverts — Cascade Visible",
+        "AA123 Diverts — NK501 Goes Critical",
+        "AA123/UA456 Recover — NK501 Cliffhanger",
+    ]
+
+    _BEATS: ClassVar[list[list[FlightState]]] = [
+        # Beat 0 — Normal ops, two background disruptions
+        [
+            _f("AA123", "B738", "KJFK", "KORD", N, NONE, 140, 35000),
+            _f("UA456", "A320", "KLAX", "KSFO", W, HOLD, 95, 9000),
+            _f("DL789", "B737", "KATL", "KMIA", N, NONE, 185, 35000),
+            _f("SW202", "B737", "KDEN", "KLAS", W, DIV, 62, 11000),
+            _f("NK501", "B738", "KEWR", "KBOS", N, NONE, 90, 35000),
+        ],
+        # Beat 1 — AA123 enters hold; fuel starts to matter
+        [
+            _f("AA123", "B738", "KJFK", "KORD", W, HOLD, 110, 8000),
+            _f("UA456", "A320", "KLAX", "KSFO", W, HOLD, 82, 9000),
+            _f("DL789", "B737", "KATL", "KMIA", N, NONE, 160, 35000),
+            _f("SW202", "B737", "KDEN", "KLAS", W, DIV, 52, 11000),
+            _f("NK501", "B738", "KEWR", "KBOS", N, NONE, 78, 35000),
+        ],
+        # Beat 2 — AA123 misses approach; SW202 resolves
+        [
+            _f("AA123", "B738", "KJFK", "KORD", W, GO, 85, 2500),
+            _f("UA456", "A320", "KLAX", "KSFO", W, HOLD, 68, 9000),
+            _f("DL789", "B737", "KATL", "KMIA", N, NONE, 135, 35000),
+            _f("SW202", "B737", "KDEN", "KLAS", N, NONE, 78, 28000),
+            _f("NK501", "B738", "KEWR", "KBOS", N, NONE, 66, 35000),
+        ],
+        # Beat 3 — UA456 diverts; cascade begins; NK501 joins hold
+        [
+            _f("AA123", "B738", "KJFK", "KORD", C, GO, 55, 2500),
+            _f("UA456", "A320", "KLAX", "KSFO", C, DIV, 52, 14000),
+            _f("DL789", "B737", "KATL", "KMIA", N, NONE, 110, 35000),
+            _f("SW202", "B737", "KDEN", "KLAS", N, NONE, 68, 35000),
+            _f("NK501", "B738", "KEWR", "KBOS", W, HOLD, 54, 7500),
+        ],
+        # Beat 4 — AA123 diverts; NK501 goes critical; DL789 enters hold
+        [
+            _f("AA123", "B738", "KJFK", "KORD", C, DIV, 38, 12000),
+            _f("UA456", "A320", "KLAX", "KSFO", C, DIV, 41, 14000),
+            _f("DL789", "B737", "KATL", "KMIA", W, HOLD, 85, 7000),
+            _f("SW202", "B737", "KDEN", "KLAS", N, NONE, 58, 35000),
+            _f("NK501", "B738", "KEWR", "KBOS", C, HOLD, 38, 7500),
+        ],
+        # Beat 5 — AA123/UA456 recover at alternates; NK501 still critical (cliffhanger)
+        [
+            _f("AA123", "B738", "KJFK", "KORD", N, NONE, 95, 18000),
+            _f("UA456", "A320", "KLAX", "KSFO", N, NONE, 88, 22000),
+            _f("DL789", "B737", "KATL", "KMIA", W, HOLD, 72, 7000),
+            _f("SW202", "B737", "KDEN", "KLAS", N, NONE, 48, 35000),
+            _f("NK501", "B738", "KEWR", "KBOS", C, HOLD, 28, 7500),
+        ],
+    ]
+
+    def __init__(self) -> None:
+        self._beat_index: int = 0
+
+    @property
+    def beat_index(self) -> int:
+        return self._beat_index
+
+    @property
+    def beat_name(self) -> str:
+        return self._BEAT_NAMES[self._beat_index]
+
+    def current_beat(self) -> list[FlightState]:
+        return list(self._BEATS[self._beat_index]) + list(_BACKGROUND)
+
+    def advance(self) -> tuple[int, str]:
+        self._beat_index = (self._beat_index + 1) % len(self._BEATS)
+        return self._beat_index, self.beat_name
+
+    def reset(self) -> None:
+        self._beat_index = 0
+
+
+_engine = ScenarioEngine()
+
+
 def generate_mock_fleet() -> list[FlightState]:
-    """Return a shuffled snapshot of mock fleet states."""
-    flights = list(_MOCK_FLEET)
-    random.shuffle(flights)
-    return flights
+    """Return the current scenario beat's fleet snapshot."""
+    return _engine.current_beat()

@@ -18,7 +18,7 @@ function esc(s: string): string {
     .replace(/'/g, '&#39;');
 }
 
-const NUDGE = 0.00015;
+const NUDGE = 0.000003;
 
 // Exact FlightAware color palette applied per vector tile layer
 const FA_STYLE: maplibregl.StyleSpecification = {
@@ -253,7 +253,7 @@ export default function MapPanel({ flights = [] }: Props) {
           popup.setHTML(tooltipHtml(updated, live));
         }
       });
-    }, 30000);
+    }, 3000);
 
     return () => clearInterval(intervalId);
   }, []);

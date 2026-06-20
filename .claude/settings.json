@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/auto-format.sh",
+            "command": "bash -c 'r=$(git rev-parse --show-toplevel) && bash \"$r/.claude/hooks/auto-format.sh\"'",
             "shell": "bash",
             "timeout": 30,
             "statusMessage": "Auto-formatting..."

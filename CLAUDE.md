@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-B2B operational dashboard for airline operations dispatchers. Transforms reactive flight telemetry into
+B2B operational dashboard for fixed-base operators (FBOs). Transforms reactive flight telemetry into
 predictive, AI-driven action plans via a high-density web UI backed by a FastAPI streaming API.
 
 **Team:** Karl Johnson (backend), Ahsan Abbasi (frontend)

@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import MockFlightBoard from './MockFlightBoard';
 import MapPanel from './MapPanel';
 import AiImpactDrawer from './AiImpactDrawer';
+import DemoControls from './DemoControls';
 import { sortFlightsBySeverity } from '../utils/sortFlights';
 import { useFleetStream } from '../hooks/useFleetStream';
 import type { FlightState } from '../types/flight';
+
+const _isDemoMode = new URLSearchParams(window.location.search).get('demo') === 'true';
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
@@ -154,6 +157,7 @@ export default function AppLayout() {
         <div style={{ flex: '0 0 40%', height: '100%', overflowY: 'auto' }}>
           <FlightsPanel flights={flights} loading={loading} error={error} />
         </div>
+        {_isDemoMode && <DemoControls />}
       </div>
     );
   }
@@ -229,6 +233,7 @@ export default function AppLayout() {
           <FlightsPanel flights={flights} loading={loading} error={error} />
         )}
       </div>
+      {_isDemoMode && <DemoControls />}
     </div>
   );
 }

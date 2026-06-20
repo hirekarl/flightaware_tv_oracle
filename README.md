@@ -1,7 +1,7 @@
 # FlightAware TV — AI Fleet Disruption Oracle
 
-Real-time airline operations dashboard that transforms reactive flight telemetry into predictive,
-AI-driven action plans for fleet dispatchers.
+Real-time ground operations dashboard that transforms reactive flight telemetry into predictive,
+AI-driven action plans for fixed-base operators (FBOs).
 
 ## Repository Layout
 

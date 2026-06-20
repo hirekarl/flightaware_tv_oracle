@@ -6,16 +6,10 @@
 # Frontend .ts/.tsx in frontend/     →  prettier --write
 
 input=$(cat)
+[[ -z "$input" ]] && exit 0
 
-file_path=$(echo "$input" | python3 -c "
-import json, sys
-try:
-    d = json.load(sys.stdin)
-    fp = d.get('tool_input', {}).get('file_path', '')
-    print(fp.replace('\\\\', '/'))
-except Exception:
-    pass
-" 2>/dev/null) || true
+script_dir=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+file_path=$(printf '%s' "$input" | python3 "$script_dir/extract_path.py" 2>/dev/null) || true
 
 [[ -z "$file_path" ]] && exit 0
 
@@ -27,13 +21,14 @@ if [[ "$file_path" =~ \.py$ ]] && [[ "$file_path" =~ /(backend|tests)/ ]]; then
   cd "$repo_root"
   uv run ruff check --fix "$file_path" 2>&1 || true
   uv run ruff format "$file_path" 2>&1 || true
-  remaining=$(uv run ruff check "$file_path" 2>&1) || true
-  [[ -n "$remaining" ]] && printf '[ruff] Manual fix needed:\n%s\n' "$remaining"
+  remaining=$(uv run ruff check "$file_path" 2>&1)
+  [[ $? -ne 0 ]] && printf '[ruff] Manual fix needed:\n%s\n' "$remaining"
+  true
 fi
 
 # ── Frontend: TypeScript/TSX files in frontend/ ───────────────────────────────
 if [[ "$file_path" =~ \.(ts|tsx)$ ]] && [[ "$file_path" =~ /frontend/ ]]; then
   cd "$repo_root/frontend"
   rel="${file_path#*/frontend/}"
-  npx --no prettier --write "$rel" 2>&1 || true
+  npx prettier --write "$rel" 2>&1 || true
 fi

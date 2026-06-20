@@ -1,7 +1,7 @@
 # Instructor + google-genai
 
 **Versions:** `instructor>=1.7`, `google-genai>=2.0` (current: 2.8.0 as of 2026-06-08)
-**Role:** Structured LLM output layer. `CoordinatorAgent` sends a dispatcher brief
+**Role:** Structured LLM output layer. `CoordinatorAgent` sends an FBO operator brief
 prompt and gets back a validated `AiAnalysis` Pydantic model — no JSON parsing, no
 schema wrangling.
 
@@ -67,7 +67,7 @@ async for item in client.create_iterable(
 ### Prompt design: use Field descriptions as implicit constraints
 ```python
 class AiAnalysis(BaseModel):
-    summaryTitle: str = Field(description="One-line title for the dispatcher card.")
+    summaryTitle: str = Field(description="One-line title for the operator card.")
     rootCause: str = Field(description="Single dense sentence identifying the cause.")
 ```
 These flow into the JSON schema Instructor sends to the model and act as constraints,

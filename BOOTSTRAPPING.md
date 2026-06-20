@@ -7,10 +7,10 @@ Task: Generate a comprehensive, multi-file bootstrapping configuration and proje
 
 Project Name: FlightAware TV (AI Fleet Disruption Oracle)
 Team: Karl Johnson (Jr SWE, Pursuit AI Fellow, Per Scholas/CS50x alum), Ahsan Abbasi
-Target Audience: Airline Operations Dispatchers managing active fleet movements under high stress.
+Target Audience: Fixed-base operators (FBOs) managing ground services for active fleet movements under high stress.
 
 Core Problem:
-Traditional tracking dashboards are reactive, outputting contextless text strings and raw JSON data streams. During flight deviations (e.g., go-arounds, holding patterns), dispatchers spend 10–15 critical minutes manually cross-referencing telemetry with weather charts and crew legal limits, causing severe terminal gate bottlenecks, missed connection windows, and crew timeout risks.
+Traditional tracking dashboards are reactive, outputting contextless text strings and raw JSON data streams. During flight deviations (e.g., go-arounds, holding patterns), FBO operators spend 10–15 critical minutes manually cross-referencing telemetry with weather charts and crew legal limits, causing severe ramp bottlenecks, missed fuel truck staging windows, and uncoordinated ground crew deployment.
 
 The Solution:
 A high-density web application dashboard that displays a real-time tracking list of fleet states. The platform transforms reactive telemetry into predictive, AI-driven action plans. When a flight status changes to WARNING or CRITICAL, it floats to the top of the queue via clear visual indicators. Clicking it opens an "AI Impact Drawer" detailing the precise root cause, crew timeout probability, and actionable diversion recommendations.
