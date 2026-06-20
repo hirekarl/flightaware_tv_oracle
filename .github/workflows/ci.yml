@@ -151,7 +151,7 @@ jobs:
     name: Automated Release — semantic-release
     runs-on: ubuntu-latest
     needs: [ci-gate]
-    if: |
+    if: >-
       github.ref == 'refs/heads/main' &&
       github.event_name == 'push' &&
       needs.ci-gate.result == 'success'
@@ -168,6 +168,11 @@ jobs:
           version: "latest"
 
       - run: uv sync --group dev
+
+      - name: Stamp version
+        run: uv run semantic-release version
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
       - name: Publish release
         run: uv run semantic-release publish
