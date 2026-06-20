@@ -77,15 +77,15 @@ tells you where to pre-position fuel trucks and which gate to hold.
 
 **Karl:** The hardest problem was speed. Fifteen concurrent Gemini calls per cycle, all
 resolving before the board updates — the operator never waits for analysis. The pipeline
-is model-agnostic: swap Gemini for any frontier model and nothing changes.
+is built so you can swap in a different AI model without touching anything else.
 
 **Ahsan:** The design challenge was density. FBO ops managers read this from across a
 room while coordinating ground crews by radio. The action drawer is one click — always
 available, never in the way.
 
-**Karl:** A live AeroAPI feed is a one-line swap. The Oracle scales from a single FBO to
-a regional network. Happy to go deeper on the AI pipeline or how we'd take this to
-market.
+**Karl:** A live AeroAPI feed is a trivial swap. The Oracle scales from a single FBO to
+a regional network — and the goal stays the same: an ops manager never finds out about
+a disruption after it's already cost them a client.
 
 ---
 
