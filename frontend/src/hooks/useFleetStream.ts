@@ -90,7 +90,7 @@ export function useFleetStream(url: string): FleetStreamState {
         fetch(healthUrl)
           .then((res) => {
             if (res.ok && !cancelled) {
-              clearInterval(pollTimer!);
+              if (pollTimer !== null) clearInterval(pollTimer);
               pollTimer = null;
               openStream();
             }
