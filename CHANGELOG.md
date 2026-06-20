@@ -7,6 +7,24 @@ Use `cz changelog` to preview what the next release entry will look like locally
 
 <!-- version list -->
 
+## v1.0.1 (2026-06-20)
+
+### Bug Fixes
+
+- **frontend**: Replace pollTimer non-null assertion with null guard
+  ([`7d3a3aa`](https://github.com/hirekarl/flightaware_tv_oracle/commit/7d3a3aa0f1ac1a5e3ebc667cf6177a0f3cc2726f))
+
+### Build System
+
+- **deps**: Sync lockfiles after uv sync and npm audit fix
+  ([`56c00da`](https://github.com/hirekarl/flightaware_tv_oracle/commit/56c00daf02bd2bc48c29e18321884598ec40a431))
+
+### Documentation
+
+- **changelog**: Generate v1.0.0 entries, fix PSR insertion flag and config
+  ([`5637b01`](https://github.com/hirekarl/flightaware_tv_oracle/commit/5637b01f98b924fb08be49db9041facde226a12d))
+
+
 ## v1.0.0 (2026-06-20)
 
 ### Bug Fixes

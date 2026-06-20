@@ -1,6 +1,6 @@
 [project]
 name = "flightaware-tv-backend"
-version = "1.0.0"
+version = "1.0.1"
 description = "AI Fleet Disruption Oracle — FastAPI backend"
 requires-python = ">=3.12"
 dependencies = [
